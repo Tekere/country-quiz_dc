@@ -52,4 +52,9 @@ html {
   color: #fff;
   background-color: #35495e;
 }
+#container {
+  height: 100vh;
+  background: url('/images/background.png');
+  background-size: cover;
+}
 </style>
