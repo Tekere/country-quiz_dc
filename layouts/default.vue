@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div id="container">
     <Nuxt />
   </div>
 </template>
@@ -56,5 +56,6 @@ html {
   height: 100vh;
   background: url('/images/background.png');
   background-size: cover;
+  font-family: 'Noto Sans JP';
 }
 </style>
