@@ -5,10 +5,10 @@
       <img class="decoration" src="/images/ww.svg" alt="" />
       <div class="quiz-box">
         <div class="quiz-box-inner">
-          <h2 class="question title is-2">{{ quiz.question }}</h2>
+          <h2 class="question title is-2">{{ displayQuiz.question }}</h2>
           <div class="answers">
             <button
-              v-for="(choice, index) in quiz.choices"
+              v-for="(choice, index) in displayQuiz.choices"
               :key="index"
               class="button is-medium is-fullwidth"
               @click="choice.startMethod()"
@@ -24,31 +24,49 @@
 
 <script>
 import axios from 'axios'
+
+// const JA_REAGION_ = {
+//   Asia: 'アジア州',
+//   Africa: 'アフリカ州',
+//   Europe: 'ヨーロッパ州',
+//   Americas: 'アメリカ州',
+//   Oceania: 'オセアニア州'
+// }
 export default {
   data() {
     return {
-      quiz: {
-        question: 'どの知識についてクイズしたいですか？',
-        choices: [
-          {
-            name: 'region',
-            jaName: '地域区分クイズ',
-            startMethod: this.regionQuizStart,
-          },
-          {
-            name: 'falg',
-            jaName: '国旗クイズ',
-            startMethod: this.flagQuizStart,
-          },
-        ],
-      },
+      quiz: [],
       status: 0,
+      endNum: 5,
     }
+  },
+  computed: {
+    displayQuiz() {
+      return this.quiz[this.status]
+    },
+  },
+  created() {
+    const initialQuiz = {
+      question: 'どの知識についてクイズをしたいですか？',
+      choices: [
+        {
+          name: 'region',
+          jaName: '地域区分クイズ',
+          startMethod: this.regionQuizStart,
+        },
+        {
+          name: 'falg',
+          jaName: '国旗クイズ',
+          startMethod: this.flagQuizStart,
+        },
+      ],
+    }
+    this.quiz.push({ ...initialQuiz })
   },
   methods: {
     continue() {
-      if (this.status > 4) this.finishQuiz()
       this.status++
+      if (this.status > this.endNum) this.finishQuiz()
     },
     finishQuiz() {
       this.status = 0
@@ -57,26 +75,58 @@ export default {
     regionQuizStart() {
       axios
         .get('https://restcountries.eu/rest/v2/all')
-        .then(() => {
-          console.log('success')
+        .then((res) => {
+          this.makeQuiz(res.data)
           this.continue()
         })
-        .catch(() => {
-          console.log('fail')
+        .catch((error) => {
+          console.log(error)
         })
-      return true
     },
     flagQuizStart() {
       axios
         .get('https://restcountries.eu/rest/v2/all')
-        .then(() => {
-          console.log('success')
+        .then((res) => {
+          this.makeQuiz(res.data)
           this.continue()
         })
-        .catch(() => {
-          console.log('fail')
+        .catch((error) => {
+          console.log(error)
         })
-      return true
+    },
+    makeQuiz(responseData) {
+      console.log(responseData)
+      const country = []
+      for (let i = 0; i < this.endNum; i++) {
+        country.push(responseData[i])
+      }
+      console.log(country)
+      const quiz = {
+        question: `~~が属する州はどこですか？`,
+        choices: [
+          {
+            name: 'Asia',
+            jaName: 'アジア州',
+          },
+          {
+            name: 'Africa',
+            jaName: 'アフリカ州',
+          },
+          {
+            name: 'Americas',
+            jaName: 'アメリカ州',
+          },
+          {
+            name: 'Oceania',
+            jaName: 'オセアニア州',
+          },
+          {
+            name: 'Europe',
+            jaName: 'ヨーロッパ州',
+          },
+        ],
+      }
+      this.quiz.push(quiz)
     },
   },
 }
@@ -96,7 +146,7 @@ export default {
     flex-direction: column;
     justify-content: center;
     align-items: flex-start;
-    width: fit-content;
+    width: 60vh;
     height: fit-content;
   }
 }
@@ -109,13 +159,12 @@ export default {
 }
 .quiz-box {
   background-color: #fff;
-  height: 60vh;
-  width: 60vh;
-  padding: 2rem;
+  height: 74vh;
+  width: 100%;
+  padding: 5rem 2rem 0;
   border-radius: 20px;
   display: flex;
   flex-direction: column;
-  justify-content: center;
   align-items: center;
 }
 img.decoration {
@@ -124,13 +173,17 @@ img.decoration {
   right: 0;
 }
 .question {
+  display: block;
+  width: 100%;
   font-size: 1.5rem;
   margin-bottom: 4rem;
   color: #2f527b;
+  text-align: center;
 }
 .answers {
 }
 .button {
+  width: 450px;
   font-family: 'Noto Sans JP';
   border-color: #6066d070;
   color: #6066d0;
@@ -139,12 +192,12 @@ img.decoration {
   padding: 20px 20px;
   height: fit-content;
   transition: all 0.3s;
+  margin-bottom: 1.5rem;
   &:hover {
     color: #fff;
     background-color: #f9a826;
   }
   &:first-child {
-    margin-bottom: 2rem;
   }
 }
 </style>
