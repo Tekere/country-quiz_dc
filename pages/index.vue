@@ -5,17 +5,39 @@
       <img class="decoration" src="/images/ww.svg" alt="" />
       <div class="quiz-box">
         <div class="quiz-box-inner">
-          <h2 class="question title is-2">{{ displayQuiz.question }}</h2>
-          <div class="answers">
-            <button
-              v-for="(choice, index) in displayQuiz.choices"
-              :key="index"
-              class="button is-medium is-fullwidth"
-              @click="choice.startMethod()"
-            >
-              {{ choice.jaName }}
-            </button>
+          <!-- 初期表示 -->
+          <div v-if="status === 0" class="init">
+            <h2 class="question title is-2">
+              {{ initialOptions.question }}
+            </h2>
+            <div class="answers">
+              <button
+                v-for="(choice, index) in initialOptions.choices"
+                :key="index"
+                class="button is-medium is-fullwidth"
+                @click="choice.startMethod()"
+              >
+                {{ choice.jaName }}
+              </button>
+            </div>
           </div>
+          <!-- 質問表示 -->
+          <div v-else class="in-progress">
+            <h2 class="question title is-2">
+              {{ displayQuiz.question }}
+            </h2>
+            <div class="answers">
+              <button
+                v-for="(option, index) in displayQuiz.options"
+                :key="index"
+                class="button is-medium is-fullwidth"
+                @click="continueQuiz"
+              >
+                {{ option.jaName }}
+              </button>
+            </div>
+          </div>
+          <pre>{{ initialOptions }}</pre>
         </div>
       </div>
     </div>
@@ -24,20 +46,35 @@
 
 <script>
 import axios from 'axios'
-
-// const JA_REAGION_ = {
-//   Asia: 'アジア州',
-//   Africa: 'アフリカ州',
-//   Europe: 'ヨーロッパ州',
-//   Americas: 'アメリカ州',
-//   Oceania: 'オセアニア州'
-// }
+const regionOptions = [
+  {
+    name: 'Asia',
+    jaName: 'アジア州',
+  },
+  {
+    name: 'Africa',
+    jaName: 'アフリカ州',
+  },
+  {
+    name: 'Americas',
+    jaName: 'アメリカ州',
+  },
+  {
+    name: 'Oceania',
+    jaName: 'オセアニア州',
+  },
+  {
+    name: 'Europe',
+    jaName: 'ヨーロッパ州',
+  },
+]
 export default {
   data() {
     return {
       quiz: [],
       status: 0,
       endNum: 5,
+      initialOptions: {},
     }
   },
   computed: {
@@ -46,7 +83,9 @@ export default {
     },
   },
   created() {
-    const initialQuiz = {
+    // 初期表示の設問と選択肢
+    // startMethodで thisを使いたいのでここに書くしかない？
+    this.initialOptions = {
       question: 'どの知識についてクイズをしたいですか？',
       choices: [
         {
@@ -61,10 +100,9 @@ export default {
         },
       ],
     }
-    this.quiz.push({ ...initialQuiz })
   },
   methods: {
-    continue() {
+    continueQuiz() {
       this.status++
       if (this.status > this.endNum) this.finishQuiz()
     },
@@ -77,7 +115,7 @@ export default {
         .get('https://restcountries.eu/rest/v2/all')
         .then((res) => {
           this.makeQuiz(res.data)
-          this.continue()
+          this.continueQuiz()
         })
         .catch((error) => {
           console.log(error)
@@ -88,45 +126,22 @@ export default {
         .get('https://restcountries.eu/rest/v2/all')
         .then((res) => {
           this.makeQuiz(res.data)
-          this.continue()
+          this.continueQuiz()
         })
         .catch((error) => {
           console.log(error)
         })
     },
     makeQuiz(responseData) {
-      console.log(responseData)
-      const country = []
-      for (let i = 0; i < this.endNum; i++) {
-        country.push(responseData[i])
+      for (let i = 0; i <= this.endNum; i++) {
+        const country = responseData[i]
+        console.log(country)
+        const quiz = {
+          question: `${country.translations.ja}が属する州はどこですか？`,
+          options: regionOptions,
+        }
+        this.quiz.push(quiz)
       }
-      console.log(country)
-      const quiz = {
-        question: `~~が属する州はどこですか？`,
-        choices: [
-          {
-            name: 'Asia',
-            jaName: 'アジア州',
-          },
-          {
-            name: 'Africa',
-            jaName: 'アフリカ州',
-          },
-          {
-            name: 'Americas',
-            jaName: 'アメリカ州',
-          },
-          {
-            name: 'Oceania',
-            jaName: 'オセアニア州',
-          },
-          {
-            name: 'Europe',
-            jaName: 'ヨーロッパ州',
-          },
-        ],
-      }
-      this.quiz.push(quiz)
     },
   },
 }
