@@ -8,18 +8,23 @@
           <!-- 初期表示 -->
           <div v-if="status === 0" class="init">
             <h2 class="question title is-2">
-              {{ initialOptions.question }}
+              {{ initialQuestions.question }}
             </h2>
             <div class="answers">
               <button
-                v-for="(choice, index) in initialOptions.choices"
+                v-for="(option, index) in initialQuestions.options"
                 :key="index"
                 class="button is-medium is-fullwidth"
-                @click="choice.startMethod()"
+                @click="option.startMethod()"
               >
-                {{ choice.jaName }}
+                {{ option.jaName }}
               </button>
             </div>
+          </div>
+          <!-- クイズ終了表示 -->
+          <div v-else-if="status > endNum">
+            <h2 class="question title is-2">FINISH</h2>
+            <h2>{{ correctAnswers }}</h2>
           </div>
           <!-- 質問表示 -->
           <div v-else class="in-progress">
@@ -31,13 +36,12 @@
                 v-for="(option, index) in displayQuiz.options"
                 :key="index"
                 class="button is-medium is-fullwidth"
-                @click="continueQuiz"
+                @click="answer(option.name)"
               >
                 {{ option.jaName }}
               </button>
             </div>
           </div>
-          <pre>{{ initialOptions }}</pre>
         </div>
       </div>
     </div>
@@ -72,9 +76,10 @@ export default {
   data() {
     return {
       quiz: [],
-      status: 0,
       endNum: 5,
-      initialOptions: {},
+      status: 0,
+      correctAnswers: 0,
+      initialQuestions: {},
     }
   },
   computed: {
@@ -85,9 +90,9 @@ export default {
   created() {
     // 初期表示の設問と選択肢
     // startMethodで thisを使いたいのでここに書くしかない？
-    this.initialOptions = {
+    this.initialQuestions = {
       question: 'どの知識についてクイズをしたいですか？',
-      choices: [
+      options: [
         {
           name: 'region',
           jaName: '地域区分クイズ',
@@ -102,14 +107,17 @@ export default {
     }
   },
   methods: {
+    // クイズを進行していくためのメソッド
     continueQuiz() {
       this.status++
-      if (this.status > this.endNum) this.finishQuiz()
+      if (this.status > this.endNum + 1) this.finishQuiz()
     },
+    //  クイズを終了させるメソッド
     finishQuiz() {
       this.status = 0
       console.log('finish')
     },
+    // ５大州クイズをスタートさせるメソッド
     regionQuizStart() {
       axios
         .get('https://restcountries.eu/rest/v2/all')
@@ -121,6 +129,7 @@ export default {
           console.log(error)
         })
     },
+    // 国旗クイズをスタートさせるメソッド
     flagQuizStart() {
       axios
         .get('https://restcountries.eu/rest/v2/all')
@@ -132,15 +141,27 @@ export default {
           console.log(error)
         })
     },
+    // クイズを生成するメソッド
     makeQuiz(responseData) {
-      for (let i = 0; i <= this.endNum; i++) {
+      for (let i = 1; i < this.endNum; i++) {
         const country = responseData[i]
         console.log(country)
         const quiz = {
           question: `${country.translations.ja}が属する州はどこですか？`,
           options: regionOptions,
+          answer: country.region,
         }
+
         this.quiz.push(quiz)
+      }
+    },
+    // ユーザーがクイズに回答したときのメソッド
+    answer(userAnswer) {
+      if (userAnswer === this.displayQuiz.answer) {
+        console.log('picon')
+        this.continueQuiz()
+      } else {
+        console.log('bubu')
       }
     },
   },
