@@ -24,6 +24,7 @@
           <!-- クイズ終了表示 -->
           <div v-else-if="status > endNum">
             <h2 class="question title is-2">FINISH</h2>
+            <h2>{{ correctAnswers }}</h2>
           </div>
           <!-- 質問表示 -->
           <div v-else class="in-progress">
@@ -75,8 +76,9 @@ export default {
   data() {
     return {
       quiz: [],
-      status: 0,
       endNum: 5,
+      status: 0,
+      correctAnswers: 0,
       initialQuestions: {},
     }
   },
@@ -141,7 +143,7 @@ export default {
     },
     // クイズを生成するメソッド
     makeQuiz(responseData) {
-      for (let i = 0; i <= this.endNum; i++) {
+      for (let i = 1; i < this.endNum; i++) {
         const country = responseData[i]
         console.log(country)
         const quiz = {
