@@ -6,7 +6,7 @@
       <div class="quiz-box">
         <div class="quiz-box-inner">
           <!-- 初期表示 -->
-          <div v-if="status === 0" class="init">
+          <div v-if="status === null" class="init">
             <h2 class="question title is-2">
               {{ initialQuestions.question }}
             </h2>
@@ -22,9 +22,9 @@
             </div>
           </div>
           <!-- クイズ終了表示 -->
-          <div v-else-if="status > endNum">
+          <div v-else-if="status >= endNum">
             <h2 class="question title is-2">FINISH</h2>
-            <h2>{{ correctAnswers }}</h2>
+            <h2>{{ correctAnswers }}正解</h2>
           </div>
           <!-- 質問表示 -->
           <div v-else class="in-progress">
@@ -50,6 +50,8 @@
 
 <script>
 import axios from 'axios'
+
+const DATA_MAX = 200 // APIのデータ上限
 const regionOptions = [
   {
     name: 'Asia',
@@ -77,8 +79,8 @@ export default {
     return {
       quiz: [],
       endNum: 5,
-      status: 0,
-      correctAnswers: 0,
+      status: null,
+      correctAnswers: null,
       initialQuestions: {},
     }
   },
@@ -107,14 +109,20 @@ export default {
     }
   },
   methods: {
+    // クイズをスタート状態にするためのメソッド
+    startQuiz() {
+      // 進行状態ステータスと正解数を0で初期化する
+      this.status = 0
+      this.correctAnswers = 0
+    },
     // クイズを進行していくためのメソッド
     continueQuiz() {
       this.status++
-      if (this.status > this.endNum + 1) this.finishQuiz()
+      console.log(this.status)
+      if (this.status >= this.endNum) this.finishQuiz()
     },
     //  クイズを終了させるメソッド
     finishQuiz() {
-      this.status = 0
       console.log('finish')
     },
     // ５大州クイズをスタートさせるメソッド
@@ -123,7 +131,7 @@ export default {
         .get('https://restcountries.eu/rest/v2/all')
         .then((res) => {
           this.makeQuiz(res.data)
-          this.continueQuiz()
+          this.startQuiz()
         })
         .catch((error) => {
           console.log(error)
@@ -135,7 +143,7 @@ export default {
         .get('https://restcountries.eu/rest/v2/all')
         .then((res) => {
           this.makeQuiz(res.data)
-          this.continueQuiz()
+          this.startQuiz()
         })
         .catch((error) => {
           console.log(error)
@@ -143,26 +151,22 @@ export default {
     },
     // クイズを生成するメソッド
     makeQuiz(responseData) {
-      for (let i = 1; i < this.endNum; i++) {
-        const country = responseData[i]
+      for (let i = 1; i <= this.endNum; i++) {
+        const randomNum = Math.floor(Math.random() * DATA_MAX)
+        const country = responseData[randomNum]
         console.log(country)
         const quiz = {
           question: `${country.translations.ja}が属する州はどこですか？`,
           options: regionOptions,
           answer: country.region,
         }
-
         this.quiz.push(quiz)
       }
     },
     // ユーザーがクイズに回答したときのメソッド
     answer(userAnswer) {
-      if (userAnswer === this.displayQuiz.answer) {
-        console.log('picon')
-        this.continueQuiz()
-      } else {
-        console.log('bubu')
-      }
+      if (userAnswer === this.displayQuiz.answer) this.correctAnswers++
+      this.continueQuiz()
     },
   },
 }
@@ -228,7 +232,9 @@ img.decoration {
   padding: 20px 20px;
   height: fit-content;
   transition: all 0.3s;
+  margin: 0 auto;
   margin-bottom: 1.5rem;
+
   &:hover {
     color: #fff;
     background-color: #f9a826;
