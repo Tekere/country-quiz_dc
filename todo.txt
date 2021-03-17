@@ -1,0 +1,11 @@
+Todo
+  クイズはランダムに取得するように実装
+  国旗のクイズ
+
+質問1
+  定数のようなものはdataに書くのと export defaultより上に書くのとどちらがいいのか。dataに書くと constを使っていかにも定数というのが一見して分かるが、dataにある方がロジックの可読性は高い気がする。
+
+質問2
+  Index.vueのInitialOptionsはcreatedではなく export defaultの上に書きたいが、 this.methodのせいで書けない
+
+メモ
