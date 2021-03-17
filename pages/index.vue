@@ -2,7 +2,12 @@
   <div id="index">
     <div class="index-inner">
       <h1 class="title is-1">COUNTRY QUIZ</h1>
-      <img class="decoration" src="/images/ww.svg" alt="" />
+      <img
+        v-if="status < endNum"
+        class="decoration"
+        src="/images/def.svg"
+        alt=""
+      />
       <div class="quiz-box">
         <div class="quiz-box-inner">
           <!-- 初期表示 -->
@@ -22,9 +27,19 @@
             </div>
           </div>
           <!-- クイズ終了表示 -->
-          <div v-else-if="status >= endNum">
-            <h2 class="question title is-2">FINISH</h2>
-            <h2>{{ correctAnswers }}正解</h2>
+          <div v-else-if="status >= endNum" class="finished">
+            <img src="/images/finish.svg" alt="" />
+            <h2 class="question title">FINISH</h2>
+            <p class="result">
+              You got <span class="correct-answers">{{ correctAnswers }}</span
+              >/10 correct answer
+            </p>
+            <button
+              class="button is-medium is-fullwidth try-again"
+              @click="backMenu"
+            >
+              メニューに戻る
+            </button>
           </div>
           <!-- 質問表示 -->
           <div v-else class="in-progress">
@@ -92,7 +107,7 @@ export default {
   created() {
     // 初期表示の設問と選択肢
     // startMethodで thisを使いたいのでここに書くしかない？
-    this.initialQuestions = {
+    const initialQuestions = {
       question: 'どの知識についてクイズをしたいですか？',
       options: [
         {
@@ -107,6 +122,7 @@ export default {
         },
       ],
     }
+    this.initialQuestions = { ...initialQuestions }
   },
   methods: {
     // クイズをスタート状態にするためのメソッド
@@ -118,12 +134,14 @@ export default {
     // クイズを進行していくためのメソッド
     continueQuiz() {
       this.status++
-      console.log(this.status)
-      if (this.status >= this.endNum) this.finishQuiz()
     },
-    //  クイズを終了させるメソッド
-    finishQuiz() {
-      console.log('finish')
+
+    // クイズをリセットしてメニューに戻るメソッド
+    backMenu() {
+      this.initialQuestions = { ...this.initialQuestions }
+      this.status = null
+      this.correctAnswers = null
+      this.quiz = []
     },
     // ５大州クイズをスタートさせるメソッド
     regionQuizStart() {
@@ -153,8 +171,9 @@ export default {
     makeQuiz(responseData) {
       for (let i = 1; i <= this.endNum; i++) {
         const randomNum = Math.floor(Math.random() * DATA_MAX)
+        console.log(randomNum)
         const country = responseData[randomNum]
-        console.log(country)
+
         const quiz = {
           question: `${country.translations.ja}が属する州はどこですか？`,
           options: regionOptions,
@@ -240,6 +259,25 @@ img.decoration {
     background-color: #f9a826;
   }
   &:first-child {
+  }
+}
+// finish画面
+.finished {
+  img {
+    display: block;
+    margin: 0 auto;
+  }
+  .result {
+    font-size: 1.5rem;
+    color: #2f527b;
+  }
+  .correct-answers {
+    color: #6fcf97;
+    font-weight: 700;
+    font-size: 2.5rem;
+  }
+  .try-again {
+    margin-top: 10vw;
   }
 }
 </style>
