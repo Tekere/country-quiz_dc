@@ -17,8 +17,8 @@
             </h2>
             <div class="answers">
               <button
-                v-for="(option, index) in initialQuestions.options"
-                :key="index"
+                v-for="option in initialQuestions.options"
+                :key="option.name"
                 class="button is-medium is-fullwidth"
                 @click="option.startMethod()"
               >
@@ -32,7 +32,7 @@
             <h2 class="question title">FINISH</h2>
             <p class="result">
               You got <span class="correct-answers">{{ correctAnswers }}</span
-              >/10 correct answer
+              >/5 correct answer
             </p>
             <button
               class="button is-medium is-fullwidth try-again"
@@ -46,16 +46,22 @@
             <h2 class="question title is-2">
               {{ displayQuiz.question }}
             </h2>
-            <div class="answers">
+            <div ref="answers" class="answers">
               <button
                 v-for="(option, index) in displayQuiz.options"
                 :key="index"
                 class="button is-medium is-fullwidth"
-                @click="answer(option.name)"
+                :class="{
+                  correct: isExamining && displayQuiz.answer == option.name,
+                }"
+                @click="answer(option.name, $event)"
               >
                 {{ option.jaName }}
               </button>
+              <button v-if="isExamining" @click="continueQuiz">next</button>
             </div>
+            <!-- 回答後はNEXT以外触れなくします -->
+            <div v-if="isExamining" class="touch-prevention"></div>
           </div>
         </div>
       </div>
@@ -89,19 +95,31 @@ const regionOptions = [
     jaName: 'ヨーロッパ州',
   },
 ]
+
+function genRandomArray(array, max) {
+  while (true) {
+    const randomNum = Math.floor(Math.random() * max)
+    if (!array.includes(randomNum)) {
+      array.push(randomNum)
+      break
+    }
+  }
+}
+
 export default {
   data() {
     return {
-      quiz: [],
+      quizzes: [],
       endNum: 5,
       status: null,
       correctAnswers: null,
       initialQuestions: {},
+      isExamining: false,
     }
   },
   computed: {
     displayQuiz() {
-      return this.quiz[this.status]
+      return this.quizzes[this.status]
     },
   },
   created() {
@@ -113,12 +131,12 @@ export default {
         {
           name: 'region',
           jaName: '地域区分クイズ',
-          startMethod: this.regionQuizStart,
+          startMethod: this.fetchQuiz,
         },
         {
           name: 'falg',
           jaName: '国旗クイズ',
-          startMethod: this.flagQuizStart,
+          startMethod: this.fetchQuiz,
         },
       ],
     }
@@ -133,7 +151,20 @@ export default {
     },
     // クイズを進行していくためのメソッド
     continueQuiz() {
+      // 選択した回答のハイライト用classをはずす
+      const all = this.$refs.answers.querySelectorAll('button')
+      console.log(all)
+      all.forEach((el) => {
+        el.classList.remove('user-answered')
+      })
+
+      // クイズを進める
+      this.isExamining = false
       this.status++
+    },
+    // 回答後に正誤表示を行うメソッド
+    examiningAnswer() {
+      this.isExamining = true
     },
 
     // クイズをリセットしてメニューに戻るメソッド
@@ -141,10 +172,10 @@ export default {
       this.initialQuestions = { ...this.initialQuestions }
       this.status = null
       this.correctAnswers = null
-      this.quiz = []
+      this.quizzes = []
     },
-    // ５大州クイズをスタートさせるメソッド
-    regionQuizStart() {
+    // 通信を飛ばして、クイズ作成へ続けるメソッド
+    fetchQuiz() {
       axios
         .get('https://restcountries.eu/rest/v2/all')
         .then((res) => {
@@ -155,37 +186,28 @@ export default {
           console.log(error)
         })
     },
-    // 国旗クイズをスタートさせるメソッド
-    flagQuizStart() {
-      axios
-        .get('https://restcountries.eu/rest/v2/all')
-        .then((res) => {
-          this.makeQuiz(res.data)
-          this.startQuiz()
-        })
-        .catch((error) => {
-          console.log(error)
-        })
-    },
-    // クイズを生成するメソッド
-    makeQuiz(responseData) {
-      for (let i = 1; i <= this.endNum; i++) {
-        const randomNum = Math.floor(Math.random() * DATA_MAX)
-        console.log(randomNum)
-        const country = responseData[randomNum]
 
+    // 6州クイズを生成するメソッド
+    makeQuiz(responseData) {
+      const randomNumArray = []
+      for (let i = 0; i < this.endNum; i++) {
+        genRandomArray(randomNumArray, DATA_MAX) // 重複なし乱数の配列を作成
+        const country = responseData[randomNumArray[i]]
         const quiz = {
           question: `${country.translations.ja}が属する州はどこですか？`,
           options: regionOptions,
           answer: country.region,
         }
-        this.quiz.push(quiz)
+        this.quizzes.push(quiz)
       }
     },
     // ユーザーがクイズに回答したときのメソッド
-    answer(userAnswer) {
+    answer(userAnswer, e) {
+      // 選択した答えをハイライトさせる処理
+      e.target.classList.add('user-answered')
+      // 正解したらカウントして正誤表示を行う
       if (userAnswer === this.displayQuiz.answer) this.correctAnswers++
-      this.continueQuiz()
+      this.examiningAnswer()
     },
   },
 }
@@ -218,7 +240,7 @@ export default {
 }
 .quiz-box {
   background-color: #fff;
-  height: 74vh;
+  height: 80vh;
   width: 100%;
   padding: 5rem 2rem 0;
   border-radius: 20px;
@@ -239,7 +261,29 @@ img.decoration {
   color: #2f527b;
   text-align: center;
 }
+.in-progress {
+  position: relative;
+  .touch-prevention {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 58vh;
+    z-index: 100;
+    background-color: transparent;
+  }
+}
 .answers {
+  .button {
+    &.correct {
+      background-color: #60bf88;
+      color: #fff;
+    }
+    &.user-answered {
+      background-color: #f9a826;
+      color: #fff;
+    }
+  }
 }
 .button {
   width: 450px;
@@ -248,7 +292,7 @@ img.decoration {
   color: #6066d0;
   font-weight: 500;
   border-radius: 1rem;
-  padding: 20px 20px;
+  padding: 1.8vh 20px;
   height: fit-content;
   transition: all 0.3s;
   margin: 0 auto;
@@ -258,6 +302,7 @@ img.decoration {
     color: #fff;
     background-color: #f9a826;
   }
+
   &:first-child {
   }
 }
@@ -270,6 +315,7 @@ img.decoration {
   .result {
     font-size: 1.5rem;
     color: #2f527b;
+    text-align: center;
   }
   .correct-answers {
     color: #6fcf97;
