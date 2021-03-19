@@ -95,10 +95,21 @@ const regionOptions = [
     jaName: 'ヨーロッパ州',
   },
 ]
+
+function genRandomArray(array, max) {
+  while (true) {
+    const randomNum = Math.floor(Math.random() * max)
+    if (!array.includes(randomNum)) {
+      array.push(randomNum)
+      break
+    }
+  }
+}
+
 export default {
   data() {
     return {
-      quiz: [],
+      quizzes: [],
       endNum: 5,
       status: null,
       correctAnswers: null,
@@ -108,7 +119,7 @@ export default {
   },
   computed: {
     displayQuiz() {
-      return this.quiz[this.status]
+      return this.quizzes[this.status]
     },
   },
   created() {
@@ -120,12 +131,12 @@ export default {
         {
           name: 'region',
           jaName: '地域区分クイズ',
-          startMethod: this.regionQuizStart,
+          startMethod: this.fetchQuiz,
         },
         {
           name: 'falg',
           jaName: '国旗クイズ',
-          startMethod: this.flagQuizStart,
+          startMethod: this.fetchQuiz,
         },
       ],
     }
@@ -161,10 +172,10 @@ export default {
       this.initialQuestions = { ...this.initialQuestions }
       this.status = null
       this.correctAnswers = null
-      this.quiz = []
+      this.quizzes = []
     },
-    // ５大州クイズをスタートさせるメソッド
-    regionQuizStart() {
+    // 通信を飛ばして、クイズ作成へ続けるメソッド
+    fetchQuiz() {
       axios
         .get('https://restcountries.eu/rest/v2/all')
         .then((res) => {
@@ -175,31 +186,19 @@ export default {
           console.log(error)
         })
     },
-    // 国旗クイズをスタートさせるメソッド
-    flagQuizStart() {
-      axios
-        .get('https://restcountries.eu/rest/v2/all')
-        .then((res) => {
-          this.makeQuiz(res.data)
-          this.startQuiz()
-        })
-        .catch((error) => {
-          console.log(error)
-        })
-    },
-    // クイズを生成するメソッド
-    makeQuiz(responseData) {
-      for (let i = 1; i <= this.endNum; i++) {
-        const randomNum = Math.floor(Math.random() * DATA_MAX)
-        console.log(randomNum)
-        const country = responseData[randomNum]
 
+    // 6州クイズを生成するメソッド
+    makeQuiz(responseData) {
+      const randomNumArray = []
+      for (let i = 0; i < this.endNum; i++) {
+        genRandomArray(randomNumArray, DATA_MAX) // 重複なし乱数の配列を作成
+        const country = responseData[randomNumArray[i]]
         const quiz = {
           question: `${country.translations.ja}が属する州はどこですか？`,
           options: regionOptions,
           answer: country.region,
         }
-        this.quiz.push(quiz)
+        this.quizzes.push(quiz)
       }
     },
     // ユーザーがクイズに回答したときのメソッド
