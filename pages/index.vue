@@ -3,66 +3,78 @@
     <div class="index-inner">
       <h1 class="title is-1">COUNTRY QUIZ</h1>
       <img
-        v-if="status < endNum"
+        v-if="status <= endNum"
         class="decoration"
         src="/images/def.svg"
         alt=""
       />
       <div class="quiz-box">
         <div class="quiz-box-inner">
-          <!-- 初期表示 -->
-          <div v-if="status === null" class="init">
-            <h2 class="question title is-2">
-              {{ initialQuestions.question }}
-            </h2>
-            <div class="answers">
+          <transition mode="out-in">
+            <!-- 初期表示 -->
+            <div v-if="status === 0" class="init" key="init">
+              <h2 class="question title is-2">
+                {{ initialQuestions.question }}
+              </h2>
+              <div class="answers">
+                <button
+                  v-for="option in initialQuestions.options"
+                  :key="option.name"
+                  class="button is-medium is-fullwidth"
+                  @click="option.startMethod()"
+                >
+                  {{ option.jaName }}
+                </button>
+              </div>
+            </div>
+            <!-- クイズ終了表示 -->
+            <div v-else-if="status > endNum" class="finished" key="finish">
+              <img src="/images/finish.svg" alt="" />
+              <h2 class="question title">FINISH</h2>
+              <p class="result">
+                あなたは5問中
+                <span class="correct-answers">{{ correctAnswers }}</span>
+                問正解しました
+              </p>
               <button
-                v-for="option in initialQuestions.options"
-                :key="option.name"
-                class="button is-medium is-fullwidth"
-                @click="option.startMethod()"
+                class="button is-medium is-fullwidth try-again"
+                @click="backMenu"
               >
-                {{ option.jaName }}
+                メニューに戻る
               </button>
             </div>
-          </div>
-          <!-- クイズ終了表示 -->
-          <div v-else-if="status >= endNum" class="finished">
-            <img src="/images/finish.svg" alt="" />
-            <h2 class="question title">FINISH</h2>
-            <p class="result">
-              You got <span class="correct-answers">{{ correctAnswers }}</span
-              >/5 correct answer
-            </p>
-            <button
-              class="button is-medium is-fullwidth try-again"
-              @click="backMenu"
-            >
-              メニューに戻る
-            </button>
-          </div>
-          <!-- 質問表示 -->
-          <div v-else class="in-progress">
-            <h2 class="question title is-2">
-              {{ displayQuiz.question }}
-            </h2>
-            <div ref="answers" class="answers">
-              <button
-                v-for="(option, index) in displayQuiz.options"
-                :key="index"
-                class="button is-medium is-fullwidth"
-                :class="{
-                  correct: isExamining && displayQuiz.answer == option.name,
-                }"
-                @click="answer(option.name, $event)"
-              >
-                {{ option.jaName }}
-              </button>
-              <button v-if="isExamining" @click="continueQuiz">next</button>
+            <!-- 質問表示 -->
+            <div v-else class="in-progress" key="quiz">
+              <div class="progress-wrapper">
+                <div class="progress-bar" ref="meter"></div>
+              </div>
+              <h2 class="question title is-2">
+                {{ displayQuiz.question }}
+              </h2>
+              <div ref="answers" class="answers">
+                <button
+                  v-for="(option, index) in displayQuiz.options"
+                  :key="index"
+                  class="button is-medium is-fullwidth"
+                  :class="{
+                    correct: isExamining && displayQuiz.answer == option.name,
+                  }"
+                  @click="answer(option.name, $event)"
+                >
+                  {{ option.jaName }}
+                </button>
+                <button
+                  v-if="isExamining"
+                  @click="continueQuiz"
+                  class="next-btn button"
+                >
+                  {{ nextBtnText }}
+                </button>
+              </div>
+              <!-- 回答後はNEXT以外触れなくします -->
+              <div v-if="isExamining" class="touch-prevention"></div>
             </div>
-            <!-- 回答後はNEXT以外触れなくします -->
-            <div v-if="isExamining" class="touch-prevention"></div>
-          </div>
+          </transition>
         </div>
       </div>
     </div>
@@ -111,15 +123,20 @@ export default {
     return {
       quizzes: [],
       endNum: 5,
-      status: null,
+      status: 0,
       correctAnswers: null,
       initialQuestions: {},
       isExamining: false,
+      // nextBtnText: 'NEXT',
     }
   },
   computed: {
     displayQuiz() {
       return this.quizzes[this.status]
+    },
+    nextBtnText() {
+      if (this.status === this.endNum) return '結果を見る'
+      else return '次へ'
     },
   },
   created() {
@@ -146,7 +163,7 @@ export default {
     // クイズをスタート状態にするためのメソッド
     startQuiz() {
       // 進行状態ステータスと正解数を0で初期化する
-      this.status = 0
+      this.status = 1
       this.correctAnswers = 0
     },
     // クイズを進行していくためのメソッド
@@ -159,8 +176,8 @@ export default {
       })
 
       // クイズを進める
-      this.isExamining = false
       this.status++
+      this.isExamining = false
     },
     // 回答後に正誤表示を行うメソッド
     examiningAnswer() {
@@ -170,8 +187,8 @@ export default {
     // クイズをリセットしてメニューに戻るメソッド
     backMenu() {
       this.initialQuestions = { ...this.initialQuestions }
-      this.status = null
-      this.correctAnswers = null
+      this.status = 0
+      this.correctAnswers = 0
       this.quizzes = []
     },
     // 通信を飛ばして、クイズ作成へ続けるメソッド
@@ -198,8 +215,10 @@ export default {
           options: regionOptions,
           answer: country.region,
         }
+
         this.quizzes.push(quiz)
       }
+      this.quizzes.unshift('trash')
     },
     // ユーザーがクイズに回答したときのメソッド
     answer(userAnswer, e) {
@@ -208,6 +227,14 @@ export default {
       // 正解したらカウントして正誤表示を行う
       if (userAnswer === this.displayQuiz.answer) this.correctAnswers++
       this.examiningAnswer()
+      this.advanceMeter()
+    },
+    // クイズの進捗メーターを進めるメソッド
+    advanceMeter() {
+      const meter = this.$refs.meter
+      let percent = 0
+      percent += (this.status / this.endNum) * 100
+      meter.style.width = percent + '%'
     },
   },
 }
@@ -248,6 +275,14 @@ export default {
   flex-direction: column;
   align-items: center;
 }
+.v-enter-active,
+.v-leave-active {
+  transition: all 0.3s;
+}
+.v-enter,
+.v-leave-to {
+  opacity: 0;
+}
 img.decoration {
   position: absolute;
   top: 0;
@@ -278,10 +313,32 @@ img.decoration {
     &.correct {
       background-color: #60bf88;
       color: #fff;
+      position: relative;
+      &::after {
+        content: '';
+        display: block;
+        position: absolute;
+        right: 10px;
+        background-image: url(/images/true.svg);
+        height: 40px;
+        width: 40px;
+        fill: #fff;
+      }
     }
     &.user-answered {
-      background-color: #f9a826;
+      background-color: #ea8282;
       color: #fff;
+      position: relative;
+      &::after {
+        content: '';
+        display: block;
+        position: absolute;
+        right: 10px;
+        background-image: url(/images/false.svg);
+        height: 40px;
+        width: 40px;
+        fill: #fff;
+      }
     }
   }
 }
@@ -303,7 +360,25 @@ img.decoration {
     background-color: #f9a826;
   }
 
-  &:first-child {
+  &.next-btn {
+    width: 45%;
+    float: right;
+    margin-right: 15px;
+  }
+}
+.progress-wrapper {
+  position: relative;
+  background-color: #eee;
+  height: 0.5rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+  overflow: hidden;
+  .progress-bar {
+    position: absolute;
+    width: 0%;
+    height: 0.5rem;
+    background-color: #00946390;
+    transition: all 0.3s linear;
   }
 }
 // finish画面
@@ -314,6 +389,7 @@ img.decoration {
   }
   .result {
     font-size: 1.5rem;
+    letter-spacing: 0.02em;
     color: #2f527b;
     text-align: center;
   }
