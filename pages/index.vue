@@ -12,13 +12,13 @@
         <div class="quiz-box-inner">
           <transition mode="out-in">
             <!-- 初期表示 -->
-            <div v-if="status === 0" class="init" key="init">
+            <div v-if="status === 0" key="init" class="init">
               <h2 class="question title is-2">
-                {{ initialQuestions.question }}
+                {{ displayQuiz.question }}
               </h2>
               <div class="answers">
                 <button
-                  v-for="option in initialQuestions.options"
+                  v-for="option in displayQuiz.options"
                   :key="option.name"
                   class="button is-medium is-fullwidth"
                   @click="option.startMethod()"
@@ -28,7 +28,7 @@
               </div>
             </div>
             <!-- クイズ終了表示 -->
-            <div v-else-if="status > endNum" class="finished" key="finish">
+            <div v-else-if="status > endNum" key="finish" class="finished">
               <img src="/images/finish.svg" alt="" />
               <h2 class="question title">FINISH</h2>
               <p class="result">
@@ -44,9 +44,9 @@
               </button>
             </div>
             <!-- 質問表示 -->
-            <div v-else class="in-progress" key="quiz">
+            <div v-else key="quiz" class="in-progress">
               <div class="progress-wrapper">
-                <div class="progress-bar" ref="meter"></div>
+                <div ref="meter" class="progress-bar"></div>
               </div>
               <h2 class="question title is-2">
                 {{ displayQuiz.question }}
@@ -65,8 +65,8 @@
                 </button>
                 <button
                   v-if="isExamining"
-                  @click="continueQuiz"
                   class="next-btn button"
+                  @click="continueQuiz"
                 >
                   {{ nextBtnText }}
                 </button>
@@ -124,10 +124,8 @@ export default {
       quizzes: [],
       endNum: 5,
       status: 0,
-      correctAnswers: null,
-      initialQuestions: {},
+      correctAnswers: 0,
       isExamining: false,
-      // nextBtnText: 'NEXT',
     }
   },
   computed: {
@@ -141,23 +139,7 @@ export default {
   },
   created() {
     // 初期表示の設問と選択肢
-    // startMethodで thisを使いたいのでここに書くしかない？
-    const initialQuestions = {
-      question: 'どの知識についてクイズをしたいですか？',
-      options: [
-        {
-          name: 'region',
-          jaName: '地域区分クイズ',
-          startMethod: this.fetchQuiz,
-        },
-        {
-          name: 'falg',
-          jaName: '国旗クイズ',
-          startMethod: this.fetchQuiz,
-        },
-      ],
-    }
-    this.initialQuestions = { ...initialQuestions }
+    this.initQuizzes()
   },
   methods: {
     // クイズをスタート状態にするためのメソッド
@@ -186,10 +168,9 @@ export default {
 
     // クイズをリセットしてメニューに戻るメソッド
     backMenu() {
-      this.initialQuestions = { ...this.initialQuestions }
       this.status = 0
       this.correctAnswers = 0
-      this.quizzes = []
+      this.initQuizzes()
     },
     // 通信を飛ばして、クイズ作成へ続けるメソッド
     fetchQuiz() {
@@ -218,7 +199,6 @@ export default {
 
         this.quizzes.push(quiz)
       }
-      this.quizzes.unshift('trash')
     },
     // ユーザーがクイズに回答したときのメソッド
     answer(userAnswer, e) {
@@ -235,6 +215,26 @@ export default {
       let percent = 0
       percent += (this.status / this.endNum) * 100
       meter.style.width = percent + '%'
+    },
+    // quizzesの初期化
+    initQuizzes() {
+      this.quizzes = []
+      const initialQuestions = {
+        question: 'どの知識についてクイズをしたいですか？',
+        options: [
+          {
+            name: 'region',
+            jaName: '地域区分クイズ',
+            startMethod: this.fetchQuiz,
+          },
+          {
+            name: 'falg',
+            jaName: '国旗クイズ',
+            startMethod: this.fetchQuiz,
+          },
+        ],
+      }
+      this.quizzes.push(initialQuestions)
     },
   },
 }
