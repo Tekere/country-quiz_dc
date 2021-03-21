@@ -21,7 +21,7 @@
                   v-for="option in displayQuiz.options"
                   :key="option.name"
                   class="button is-medium is-fullwidth"
-                  @click="option.startMethod()"
+                  @click="startQuiz(option.name)"
                 >
                   {{ option.jaName }}
                 </button>
@@ -48,6 +48,13 @@
               <div class="progress-wrapper">
                 <div ref="meter" class="progress-bar"></div>
               </div>
+              <!-- 国旗クイズの場合のみ表示される -->
+              <img
+                v-if="displayQuiz.flagImageUrl"
+                :src="displayQuiz.flagImageUrl"
+                class="flag-img"
+                alt=""
+              />
               <h2 class="question title is-2">
                 {{ displayQuiz.question }}
               </h2>
@@ -70,9 +77,9 @@
                 >
                   {{ nextBtnText }}
                 </button>
+                <!-- 回答後はNEXT以外触れなくします -->
+                <div v-if="isExamining" class="touch-prevention"></div>
               </div>
-              <!-- 回答後はNEXT以外触れなくします -->
-              <div v-if="isExamining" class="touch-prevention"></div>
             </div>
           </transition>
         </div>
@@ -142,12 +149,6 @@ export default {
     this.initQuizzes()
   },
   methods: {
-    // クイズをスタート状態にするためのメソッド
-    startQuiz() {
-      // 進行状態ステータスと正解数を0で初期化する
-      this.status = 1
-      this.correctAnswers = 0
-    },
     // クイズを進行していくためのメソッド
     continueQuiz() {
       // 選択した回答のハイライト用classをはずす
@@ -173,20 +174,22 @@ export default {
       this.initQuizzes()
     },
     // 通信を飛ばして、クイズ作成へ続けるメソッド
-    fetchQuiz() {
+    startQuiz(type) {
       axios
         .get('https://restcountries.eu/rest/v2/all')
         .then((res) => {
-          this.makeQuiz(res.data)
-          this.startQuiz()
+          if (type === 'region') this.makeRegionQuiz(res.data)
+          else if (type === 'flag') this.makeFlagQuiz(res.data)
+          this.status = 1
+          this.correctAnswers = 0
         })
         .catch((error) => {
-          console.log(error)
+          throw new Error(error)
         })
     },
 
     // 6州クイズを生成するメソッド
-    makeQuiz(responseData) {
+    makeRegionQuiz(responseData) {
       const randomNumArray = []
       for (let i = 0; i < this.endNum; i++) {
         genRandomArray(randomNumArray, DATA_MAX) // 重複なし乱数の配列を作成
@@ -196,7 +199,27 @@ export default {
           options: regionOptions,
           answer: country.region,
         }
-
+        this.quizzes.push(quiz)
+      }
+    },
+    // 国旗クイズを生成するメソッド
+    makeFlagQuiz(responseData) {
+      const randomNumArray = []
+      for (let i = 0; i < this.endNum; i++) {
+        genRandomArray(randomNumArray, DATA_MAX) // 重複なし乱数の配列を作成
+        const country = responseData[randomNumArray[i]]
+        const flagOptions = []
+        const flagOption = {
+          name: country.translations.en,
+          jaName: country.translations.ja,
+        }
+        flagOptions.push(flagOption)
+        const quiz = {
+          flagImageUrl: country.flag,
+          question: `この国旗はどこの国のものですか？`,
+          options: flagOptions,
+          answer: country.translations.en,
+        }
         this.quizzes.push(quiz)
       }
     },
@@ -225,12 +248,10 @@ export default {
           {
             name: 'region',
             jaName: '地域区分クイズ',
-            startMethod: this.fetchQuiz,
           },
           {
-            name: 'falg',
+            name: 'flag',
             jaName: '国旗クイズ',
-            startMethod: this.fetchQuiz,
           },
         ],
       }
@@ -255,6 +276,7 @@ export default {
     justify-content: center;
     align-items: flex-start;
     width: 60vh;
+    max-width: 95vw;
     height: fit-content;
   }
 }
@@ -269,7 +291,7 @@ export default {
   background-color: #fff;
   height: 80vh;
   width: 100%;
-  padding: 5rem 2rem 0;
+  padding: 4rem 2rem 0;
   border-radius: 20px;
   display: flex;
   flex-direction: column;
@@ -288,27 +310,33 @@ img.decoration {
   top: 0;
   right: 0;
 }
+img.flag-img {
+  height: 140px;
+  display: block;
+  margin: 0 auto;
+  border: 5px solid lightgray;
+}
 .question {
   display: block;
   width: 100%;
   font-size: 1.5rem;
-  margin-bottom: 4rem;
+  margin-top: 0.5rem;
+  margin-bottom: 2.5rem;
   color: #2f527b;
   text-align: center;
 }
-.in-progress {
+
+.answers {
   position: relative;
   .touch-prevention {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
-    height: 58vh;
+    height: 100%;
     z-index: 100;
     background-color: transparent;
   }
-}
-.answers {
   .button {
     &.correct {
       background-color: #60bf88;
@@ -343,7 +371,7 @@ img.decoration {
   }
 }
 .button {
-  width: 450px;
+  max-width: 450px;
   font-family: 'Noto Sans JP';
   border-color: #6066d070;
   color: #6066d0;
@@ -363,7 +391,7 @@ img.decoration {
   &.next-btn {
     width: 45%;
     float: right;
-    margin-right: 15px;
+    margin-right: 20px;
   }
 }
 .progress-wrapper {
