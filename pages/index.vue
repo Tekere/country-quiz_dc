@@ -178,6 +178,9 @@ export default {
       axios
         .get('https://restcountries.eu/rest/v2/all')
         .then((res) => {
+          res.data = res.data.filter((el) => {
+            return el.translations.ja !== null
+          })
           if (type === 'region') this.makeRegionQuiz(res.data)
           else if (type === 'flag') this.makeFlagQuiz(res.data)
           this.status = 1
@@ -210,15 +213,35 @@ export default {
         const country = responseData[randomNumArray[i]]
         const flagOptions = []
         const flagOption = {
-          name: country.translations.en,
+          name: country.name,
           jaName: country.translations.ja,
         }
+        const randomNumArray2 = []
+        for (let j = 0; j < 4; j++) {
+          while (true) {
+            const randomNum = Math.floor(Math.random() * DATA_MAX)
+            if (!randomNumArray2.includes(randomNum) && randomNum !== i) {
+              randomNumArray2.push(randomNum)
+              break
+            }
+          }
+          flagOptions.push({
+            name: responseData[randomNumArray2[j]].name,
+            jaName: responseData[randomNumArray2[j]].translations.ja,
+          })
+        }
         flagOptions.push(flagOption)
+        // answer sort
+        flagOptions.sort((a, b) => {
+          if (a.name > b.name) return -1
+          else if (a.name < b.name) return 1
+          else return 0
+        })
         const quiz = {
           flagImageUrl: country.flag,
           question: `この国旗はどこの国のものですか？`,
           options: flagOptions,
-          answer: country.translations.en,
+          answer: country.name,
         }
         this.quizzes.push(quiz)
       }
@@ -289,7 +312,7 @@ export default {
 }
 .quiz-box {
   background-color: #fff;
-  height: 80vh;
+  height: 85vh;
   width: 100%;
   padding: 4rem 2rem 0;
   border-radius: 20px;
@@ -311,7 +334,7 @@ img.decoration {
   right: 0;
 }
 img.flag-img {
-  height: 140px;
+  height: 120px;
   display: block;
   margin: 0 auto;
   border: 5px solid lightgray;
@@ -377,7 +400,7 @@ img.flag-img {
   color: #6066d0;
   font-weight: 500;
   border-radius: 1rem;
-  padding: 1.8vh 20px;
+  padding: 1.5vh 20px;
   height: fit-content;
   transition: all 0.3s;
   margin: 0 auto;
