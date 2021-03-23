@@ -3,60 +3,85 @@
     <div class="index-inner">
       <h1 class="title is-1">COUNTRY QUIZ</h1>
       <img
-        v-if="status < endNum"
+        v-if="status <= endNum"
         class="decoration"
         src="/images/def.svg"
         alt=""
       />
       <div class="quiz-box">
         <div class="quiz-box-inner">
-          <!-- 初期表示 -->
-          <div v-if="status === null" class="init">
-            <h2 class="question title is-2">
-              {{ initialQuestions.question }}
-            </h2>
-            <div class="answers">
+          <transition mode="out-in">
+            <!-- 初期表示 -->
+            <div v-if="status === 0" key="init" class="init">
+              <h2 class="question title is-2">
+                {{ displayQuiz.question }}
+              </h2>
+              <div class="answers">
+                <button
+                  v-for="option in displayQuiz.options"
+                  :key="option.name"
+                  class="button is-medium is-fullwidth"
+                  @click="startQuiz(option.name)"
+                >
+                  {{ option.jaName }}
+                </button>
+              </div>
+            </div>
+            <!-- クイズ終了表示 -->
+            <div v-else-if="status > endNum" key="finish" class="finished">
+              <img src="/images/finish.svg" alt="" />
+              <h2 class="question title">FINISH</h2>
+              <p class="result">
+                あなたは5問中
+                <span class="correct-answers">{{ correctAnswers }}</span>
+                問正解しました
+              </p>
               <button
-                v-for="(option, index) in initialQuestions.options"
-                :key="index"
-                class="button is-medium is-fullwidth"
-                @click="option.startMethod()"
+                class="button is-medium is-fullwidth try-again"
+                @click="backMenu"
               >
-                {{ option.jaName }}
+                メニューに戻る
               </button>
             </div>
-          </div>
-          <!-- クイズ終了表示 -->
-          <div v-else-if="status >= endNum" class="finished">
-            <img src="/images/finish.svg" alt="" />
-            <h2 class="question title">FINISH</h2>
-            <p class="result">
-              You got <span class="correct-answers">{{ correctAnswers }}</span
-              >/10 correct answer
-            </p>
-            <button
-              class="button is-medium is-fullwidth try-again"
-              @click="backMenu"
-            >
-              メニューに戻る
-            </button>
-          </div>
-          <!-- 質問表示 -->
-          <div v-else class="in-progress">
-            <h2 class="question title is-2">
-              {{ displayQuiz.question }}
-            </h2>
-            <div class="answers">
-              <button
-                v-for="(option, index) in displayQuiz.options"
-                :key="index"
-                class="button is-medium is-fullwidth"
-                @click="answer(option.name)"
-              >
-                {{ option.jaName }}
-              </button>
+            <!-- 質問表示 -->
+            <div v-else key="quiz" class="in-progress">
+              <div class="progress-wrapper">
+                <div ref="meter" class="progress-bar"></div>
+              </div>
+              <!-- 国旗クイズの場合のみ表示される -->
+              <img
+                v-if="displayQuiz.flagImageUrl"
+                :src="displayQuiz.flagImageUrl"
+                class="flag-img"
+                alt=""
+              />
+              <h2 class="question title is-2">
+                {{ displayQuiz.question }}
+              </h2>
+              <div ref="answers" class="answers">
+                <button
+                  v-for="(option, index) in displayQuiz.options"
+                  :key="index"
+                  class="button is-medium is-fullwidth"
+                  :class="{
+                    correct: isExamining && displayQuiz.answer == option.name,
+                  }"
+                  @click="answer(option.name, $event)"
+                >
+                  {{ option.jaName }}
+                </button>
+                <button
+                  v-if="isExamining"
+                  class="next-btn button"
+                  @click="continueQuiz"
+                >
+                  {{ nextBtnText }}
+                </button>
+                <!-- 回答後はNEXT以外触れなくします -->
+                <div v-if="isExamining" class="touch-prevention"></div>
+              </div>
             </div>
-          </div>
+          </transition>
         </div>
       </div>
     </div>
@@ -89,103 +114,171 @@ const regionOptions = [
     jaName: 'ヨーロッパ州',
   },
 ]
+
+function genRandomArray(array, max) {
+  while (true) {
+    const randomNum = Math.floor(Math.random() * max)
+    if (!array.includes(randomNum)) {
+      array.push(randomNum)
+      break
+    }
+  }
+}
+
 export default {
   data() {
     return {
-      quiz: [],
+      quizzes: [],
       endNum: 5,
-      status: null,
-      correctAnswers: null,
-      initialQuestions: {},
+      status: 0,
+      correctAnswers: 0,
+      isExamining: false,
     }
   },
   computed: {
     displayQuiz() {
-      return this.quiz[this.status]
+      return this.quizzes[this.status]
+    },
+    nextBtnText() {
+      if (this.status === this.endNum) return '結果を見る'
+      else return '次へ'
     },
   },
   created() {
     // 初期表示の設問と選択肢
-    // startMethodで thisを使いたいのでここに書くしかない？
-    const initialQuestions = {
-      question: 'どの知識についてクイズをしたいですか？',
-      options: [
-        {
-          name: 'region',
-          jaName: '地域区分クイズ',
-          startMethod: this.regionQuizStart,
-        },
-        {
-          name: 'falg',
-          jaName: '国旗クイズ',
-          startMethod: this.flagQuizStart,
-        },
-      ],
-    }
-    this.initialQuestions = { ...initialQuestions }
+    this.initQuizzes()
   },
   methods: {
-    // クイズをスタート状態にするためのメソッド
-    startQuiz() {
-      // 進行状態ステータスと正解数を0で初期化する
-      this.status = 0
-      this.correctAnswers = 0
-    },
     // クイズを進行していくためのメソッド
     continueQuiz() {
+      // 選択した回答のハイライト用classをはずす
+      const all = this.$refs.answers.querySelectorAll('button')
+      console.log(all)
+      all.forEach((el) => {
+        el.classList.remove('user-answered')
+      })
+
+      // クイズを進める
       this.status++
+      this.isExamining = false
+    },
+    // 回答後に正誤表示を行うメソッド
+    examiningAnswer() {
+      this.isExamining = true
     },
 
     // クイズをリセットしてメニューに戻るメソッド
     backMenu() {
-      this.initialQuestions = { ...this.initialQuestions }
-      this.status = null
-      this.correctAnswers = null
-      this.quiz = []
+      this.status = 0
+      this.correctAnswers = 0
+      this.initQuizzes()
     },
-    // ５大州クイズをスタートさせるメソッド
-    regionQuizStart() {
+    // 通信を飛ばして、クイズ作成へ続けるメソッド
+    startQuiz(type) {
       axios
         .get('https://restcountries.eu/rest/v2/all')
         .then((res) => {
-          this.makeQuiz(res.data)
-          this.startQuiz()
+          res.data = res.data.filter((el) => {
+            return el.translations.ja !== null
+          })
+          if (type === 'region') this.makeRegionQuiz(res.data)
+          else if (type === 'flag') this.makeFlagQuiz(res.data)
+          this.status = 1
+          this.correctAnswers = 0
         })
         .catch((error) => {
-          console.log(error)
+          throw new Error(error)
         })
     },
-    // 国旗クイズをスタートさせるメソッド
-    flagQuizStart() {
-      axios
-        .get('https://restcountries.eu/rest/v2/all')
-        .then((res) => {
-          this.makeQuiz(res.data)
-          this.startQuiz()
-        })
-        .catch((error) => {
-          console.log(error)
-        })
-    },
-    // クイズを生成するメソッド
-    makeQuiz(responseData) {
-      for (let i = 1; i <= this.endNum; i++) {
-        const randomNum = Math.floor(Math.random() * DATA_MAX)
-        console.log(randomNum)
-        const country = responseData[randomNum]
 
+    // 6州クイズを生成するメソッド
+    makeRegionQuiz(responseData) {
+      const randomNumArray = []
+      for (let i = 0; i < this.endNum; i++) {
+        genRandomArray(randomNumArray, DATA_MAX) // 重複なし乱数の配列を作成
+        const country = responseData[randomNumArray[i]]
         const quiz = {
           question: `${country.translations.ja}が属する州はどこですか？`,
           options: regionOptions,
           answer: country.region,
         }
-        this.quiz.push(quiz)
+        this.quizzes.push(quiz)
+      }
+    },
+    // 国旗クイズを生成するメソッド
+    makeFlagQuiz(responseData) {
+      const randomNumArray = []
+      for (let i = 0; i < this.endNum; i++) {
+        genRandomArray(randomNumArray, DATA_MAX) // 重複なし乱数の配列を作成
+        const country = responseData[randomNumArray[i]]
+        const flagOptions = []
+        const flagOption = {
+          name: country.name,
+          jaName: country.translations.ja,
+        }
+        const randomNumArray2 = []
+        for (let j = 0; j < 4; j++) {
+          while (true) {
+            const randomNum = Math.floor(Math.random() * DATA_MAX)
+            if (!randomNumArray2.includes(randomNum) && randomNum !== i) {
+              randomNumArray2.push(randomNum)
+              break
+            }
+          }
+          flagOptions.push({
+            name: responseData[randomNumArray2[j]].name,
+            jaName: responseData[randomNumArray2[j]].translations.ja,
+          })
+        }
+        flagOptions.push(flagOption)
+        // answer sort
+        flagOptions.sort((a, b) => {
+          if (a.name > b.name) return -1
+          else if (a.name < b.name) return 1
+          else return 0
+        })
+        const quiz = {
+          flagImageUrl: country.flag,
+          question: `この国旗はどこの国のものですか？`,
+          options: flagOptions,
+          answer: country.name,
+        }
+        this.quizzes.push(quiz)
       }
     },
     // ユーザーがクイズに回答したときのメソッド
-    answer(userAnswer) {
+    answer(userAnswer, e) {
+      // 選択した答えをハイライトさせる処理
+      e.target.classList.add('user-answered')
+      // 正解したらカウントして正誤表示を行う
       if (userAnswer === this.displayQuiz.answer) this.correctAnswers++
-      this.continueQuiz()
+      this.examiningAnswer()
+      this.advanceMeter()
+    },
+    // クイズの進捗メーターを進めるメソッド
+    advanceMeter() {
+      const meter = this.$refs.meter
+      let percent = 0
+      percent += (this.status / this.endNum) * 100
+      meter.style.width = percent + '%'
+    },
+    // quizzesの初期化
+    initQuizzes() {
+      this.quizzes = []
+      const initialQuestions = {
+        question: 'どの知識についてクイズをしたいですか？',
+        options: [
+          {
+            name: 'region',
+            jaName: '地域区分クイズ',
+          },
+          {
+            name: 'flag',
+            jaName: '国旗クイズ',
+          },
+        ],
+      }
+      this.quizzes.push(initialQuestions)
     },
   },
 }
@@ -206,6 +299,7 @@ export default {
     justify-content: center;
     align-items: flex-start;
     width: 60vh;
+    max-width: 95vw;
     height: fit-content;
   }
 }
@@ -218,37 +312,95 @@ export default {
 }
 .quiz-box {
   background-color: #fff;
-  height: 74vh;
+  height: 85vh;
   width: 100%;
-  padding: 5rem 2rem 0;
+  padding: 4rem 2rem 0;
   border-radius: 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
+}
+.v-enter-active,
+.v-leave-active {
+  transition: all 0.3s;
+}
+.v-enter,
+.v-leave-to {
+  opacity: 0;
 }
 img.decoration {
   position: absolute;
   top: 0;
   right: 0;
 }
+img.flag-img {
+  height: 120px;
+  display: block;
+  margin: 0 auto;
+  border: 5px solid lightgray;
+}
 .question {
   display: block;
   width: 100%;
   font-size: 1.5rem;
-  margin-bottom: 4rem;
+  margin-top: 0.5rem;
+  margin-bottom: 2.5rem;
   color: #2f527b;
   text-align: center;
 }
+
 .answers {
+  position: relative;
+  .touch-prevention {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 100;
+    background-color: transparent;
+  }
+  .button {
+    &.correct {
+      background-color: #60bf88;
+      color: #fff;
+      position: relative;
+      &::after {
+        content: '';
+        display: block;
+        position: absolute;
+        right: 10px;
+        background-image: url(/images/true.svg);
+        height: 40px;
+        width: 40px;
+        fill: #fff;
+      }
+    }
+    &.user-answered {
+      background-color: #ea8282;
+      color: #fff;
+      position: relative;
+      &::after {
+        content: '';
+        display: block;
+        position: absolute;
+        right: 10px;
+        background-image: url(/images/false.svg);
+        height: 40px;
+        width: 40px;
+        fill: #fff;
+      }
+    }
+  }
 }
 .button {
-  width: 450px;
+  max-width: 450px;
   font-family: 'Noto Sans JP';
   border-color: #6066d070;
   color: #6066d0;
   font-weight: 500;
   border-radius: 1rem;
-  padding: 20px 20px;
+  padding: 1.5vh 20px;
   height: fit-content;
   transition: all 0.3s;
   margin: 0 auto;
@@ -258,7 +410,26 @@ img.decoration {
     color: #fff;
     background-color: #f9a826;
   }
-  &:first-child {
+
+  &.next-btn {
+    width: 45%;
+    float: right;
+    margin-right: 20px;
+  }
+}
+.progress-wrapper {
+  position: relative;
+  background-color: #eee;
+  height: 0.5rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+  overflow: hidden;
+  .progress-bar {
+    position: absolute;
+    width: 0%;
+    height: 0.5rem;
+    background-color: #00946390;
+    transition: all 0.3s linear;
   }
 }
 // finish画面
@@ -269,7 +440,9 @@ img.decoration {
   }
   .result {
     font-size: 1.5rem;
+    letter-spacing: 0.02em;
     color: #2f527b;
+    text-align: center;
   }
   .correct-answers {
     color: #6fcf97;
