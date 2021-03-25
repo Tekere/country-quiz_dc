@@ -195,7 +195,7 @@ export default {
     makeRegionQuiz(responseData) {
       const randomNumArray = []
       for (let i = 0; i < this.endNum; i++) {
-        genRandomArray(randomNumArray, DATA_MAX) // 重複なし乱数の配列を作成
+        genRandomArray(randomNumArray, DATA_MAX)
         const country = responseData[randomNumArray[i]]
         const quiz = {
           question: `${country.translations.ja}が属する州はどこですか？`,
@@ -209,7 +209,7 @@ export default {
     makeFlagQuiz(responseData) {
       const randomNumArray = []
       for (let i = 0; i < this.endNum; i++) {
-        genRandomArray(randomNumArray, DATA_MAX) // 重複なし乱数の配列を作成
+        genRandomArray(randomNumArray, DATA_MAX)
         const country = responseData[randomNumArray[i]]
         const flagOptions = []
         const flagOption = {
