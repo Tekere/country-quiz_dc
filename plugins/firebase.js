@@ -6,7 +6,7 @@ const apiKey = process.env.FIREBASE_API_KEY
 console.log(apiKey)
 if (!firebase.apps.length) {
   firebase.initializeApp({
-    apiKey: apiKey,
+    apiKey,
     authDomain: 'country-quiz-3eb1e.firebaseapp.com',
     projectId: 'country-quiz-3eb1e',
     storageBucket: 'country-quiz-3eb1e.appspot.com',
