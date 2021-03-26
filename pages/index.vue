@@ -1,5 +1,8 @@
 <template>
   <div id="index">
+    <div class="auth-box">
+      <a class="login" @click.prevent="login">ログイン</a>
+    </div>
     <div class="index-inner">
       <h1 class="title is-1">COUNTRY QUIZ</h1>
       <img
@@ -194,8 +197,11 @@ export default {
     // 6州クイズを生成するメソッド
     makeRegionQuiz(responseData) {
       const randomNumArray = []
-      for (let i = 0; i < this.endNum; i++) {
+      for (let n = 0; n < 5; n++) {
         genRandomArray(randomNumArray, DATA_MAX)
+      }
+      console.log(randomNumArray)
+      for (let i = 0; i < this.endNum; i++) {
         const country = responseData[randomNumArray[i]]
         const quiz = {
           question: `${country.translations.ja}が属する州はどこですか？`,
@@ -208,30 +214,40 @@ export default {
     // 国旗クイズを生成するメソッド
     makeFlagQuiz(responseData) {
       const randomNumArray = []
-      for (let i = 0; i < this.endNum; i++) {
+      for (let n = 0; n < 5; n++) {
         genRandomArray(randomNumArray, DATA_MAX)
+      }
+      for (let i = 0; i < this.endNum; i++) {
+        // 正解を作成
         const country = responseData[randomNumArray[i]]
         const flagOptions = []
         const flagOption = {
           name: country.name,
           jaName: country.translations.ja,
         }
+        // 正解セット
+        flagOptions.push(flagOption)
+
+        // 不正解問題作成
         const randomNumArray2 = []
         for (let j = 0; j < 4; j++) {
           while (true) {
             const randomNum = Math.floor(Math.random() * DATA_MAX)
-            if (!randomNumArray2.includes(randomNum) && randomNum !== i) {
+            if (
+              !randomNumArray2.includes(randomNum) &&
+              randomNum !== randomNumArray[i] // 正解をかぶってしまうといけないので&&以下の記述が必要
+            ) {
               randomNumArray2.push(randomNum)
               break
             }
           }
+          // 不正解問題をセット
           flagOptions.push({
             name: responseData[randomNumArray2[j]].name,
             jaName: responseData[randomNumArray2[j]].translations.ja,
           })
         }
-        flagOptions.push(flagOption)
-        // answer sort
+        // 正解が先頭でセットされてしまっているのでsortをかけて分からなくする
         flagOptions.sort((a, b) => {
           if (a.name > b.name) return -1
           else if (a.name < b.name) return 1
@@ -280,6 +296,9 @@ export default {
       }
       this.quizzes.push(initialQuestions)
     },
+    login() {
+      this.$store.dispatch('login')
+    },
   },
 }
 </script>
@@ -291,7 +310,20 @@ export default {
   flex-direction: column;
   justify-content: center;
   align-items: center;
+  position: relative;
+  .auth-box {
+    display: block;
+    position: absolute;
+    top: 5px;
+    right: 10px;
 
+    padding: 5px 15px;
+    a {
+      color: #fff;
+      font-size: 1.3rem;
+      border-bottom: 1px solid #fff;
+    }
+  }
   .index-inner {
     position: relative;
     display: flex;
