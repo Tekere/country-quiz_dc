@@ -3,7 +3,24 @@
     <Nuxt />
   </div>
 </template>
-
+<script>
+import firebase from 'firebase'
+import { mapActions } from 'vuex'
+export default {
+  created() {
+    firebase.auth().onAuthStateChanged((user) => {
+      if (user) {
+        this.setLoginUser(user)
+      } else {
+        this.deleteLoginUser()
+      }
+    })
+  },
+  methods: {
+    ...mapActions(['setLoginUser', 'deleteLoginUser']),
+  },
+}
+</script>
 <style>
 html {
   font-family: 'Source Sans Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI',

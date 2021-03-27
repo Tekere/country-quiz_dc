@@ -1,7 +1,10 @@
 <template>
   <div id="index">
     <div class="auth-box">
-      <a class="login" @click.prevent="login">ログイン</a>
+      <div v-if="loginUser">
+        <a class="logout" @click="logout">ログアウト</a>
+      </div>
+      <a v-else class="login" @click.prevent="login">ログイン</a>
     </div>
     <div class="index-inner">
       <h1 class="title is-1">COUNTRY QUIZ</h1>
@@ -88,11 +91,13 @@
         </div>
       </div>
     </div>
+    <pre>{{ loginUser }}</pre>
   </div>
 </template>
 
 <script>
 import axios from 'axios'
+import { mapGetters, mapActions } from 'vuex'
 
 const DATA_MAX = 200 // APIのデータ上限
 const regionOptions = [
@@ -139,6 +144,7 @@ export default {
     }
   },
   computed: {
+    ...mapGetters(['loginUser']),
     displayQuiz() {
       return this.quizzes[this.status]
     },
@@ -152,6 +158,7 @@ export default {
     this.initQuizzes()
   },
   methods: {
+    ...mapActions(['login', 'logout']),
     // クイズを進行していくためのメソッド
     continueQuiz() {
       // 選択した回答のハイライト用classをはずす
@@ -295,9 +302,6 @@ export default {
         ],
       }
       this.quizzes.push(initialQuestions)
-    },
-    login() {
-      this.$store.dispatch('login')
     },
   },
 }
