@@ -13,7 +13,7 @@ export const mutations = {
     const { uid, email, displayName, photoURL } = user
     state.loginUser = { uid, email, displayName, photoURL }
   },
-  deleteLoginUser() {
+  deleteLoginUser(state) {
     state.loginUser = null
     console.log(state.loginUser)
   },
