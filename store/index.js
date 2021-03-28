@@ -15,7 +15,6 @@ export const mutations = {
   },
   deleteLoginUser(state) {
     state.loginUser = null
-    console.log(state.loginUser)
   },
 }
 
