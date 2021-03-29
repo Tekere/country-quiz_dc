@@ -50,14 +50,6 @@
               >
                 メニューに戻る
               </button>
-              <!-- <button
-                @click="
-                  this['result/addResult']({
-                    uid: loginUser.id,
-                    correctAnswers: correctAnswers,
-                  })
-                "
-              ></button> -->
             </div>
             <!-- 質問表示 -->
             <div v-else key="quiz" class="in-progress">
@@ -149,6 +141,7 @@ export default {
       quizzes: [],
       endNum: 5,
       status: 0,
+      selectedTypeOfQuiz: null,
       correctAnswers: 0,
       isExamining: false,
     }
@@ -164,10 +157,12 @@ export default {
     },
   },
   watch: {
+    // クイズが終わったときにログイン済みなら記録をpostする
     status(newValue) {
-      if (newValue > this.endNum) {
-        this.$store.dispatch('result/addResult', {
+      if (newValue > this.endNum && this.loginUser) {
+        this.addResult({
           uid: this.loginUser.uid,
+          typeOfQuiz: this.selectedTypeOfQuiz,
           correctAnswers: this.correctAnswers,
         })
       }
@@ -179,6 +174,7 @@ export default {
   },
   methods: {
     ...mapActions(['login', 'logout']),
+    ...mapActions('result', ['addResult']),
     // クイズを進行していくためのメソッド
     continueQuiz() {
       // 選択した回答のハイライト用classをはずす
@@ -210,8 +206,13 @@ export default {
           res.data = res.data.filter((el) => {
             return el.translations.ja !== null
           })
-          if (type === 'region') this.makeRegionQuiz(res.data)
-          else if (type === 'flag') this.makeFlagQuiz(res.data)
+          if (type === 'region') {
+            this.makeRegionQuiz(res.data)
+            this.selectedTypeOfQuiz = 'region'
+          } else if (type === 'flag') {
+            this.makeFlagQuiz(res.data)
+            this.selectedTypeOfQuiz = 'flag'
+          }
           this.status = 1
           this.correctAnswers = 0
         })

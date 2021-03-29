@@ -4,21 +4,47 @@ export const state = () => ({
   results: [],
 })
 
-export const getters = {}
+export const getters = {
+  results: (state) => state.results,
+}
 
 export const mutations = {
-  addResult(correctAnswers) {
-    // state.results.push(correctAnswers)
-    console.log(correctAnswers)
+  addResult(state, resultObj) {
+    state.results.push(resultObj)
   },
 }
 
 export const actions = {
-  addResult({ commit }, { uid, correctAnswers }) {
-    if (uid)
-      firebase.firestore().collection(`users/${uid}/results`).add({
-        correctAnswerCount: correctAnswers,
+  fetchResult({ commit }, uid) {
+    firebase
+      .firestore()
+      .collection(`users/${uid}/results`)
+      .get()
+      .then((snapshot) => {
+        snapshot.forEach((doc) => {
+          commit('addResult', doc.data())
+        })
       })
-    commit('addResult', correctAnswers)
+  },
+
+  addResult({ commit }, { uid, typeOfQuiz, correctAnswers }) {
+    if (uid) {
+      const resultObj = {
+        typeOfQuiz,
+        correctAnswerCount: correctAnswers,
+        createdAt: new Date(),
+      }
+      firebase.firestore().collection(`users/${uid}/results`).add(
+        // 記録時間をサーバー側に任せるパターン
+        // {
+        //   typeOfQuiz,
+        //   correctAnswerCount: correctAnswers,
+        //   createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+        // }
+        resultObj
+      )
+      // fetchResultsのときにも同じmutationが呼ばれるため配列にして渡す
+      commit('addResult', resultObj)
+    }
   },
 }
