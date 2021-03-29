@@ -1,8 +1,10 @@
 <template>
   <div id="index">
-    <div class="auth-box">
+    <div v-cloak class="auth-box">
       <div v-if="loginUser">
-        <a class="logout" @click="logout">ログアウト</a>
+        <a href="" @click.prevent="$router.push({ name: 'mypage' })"
+          ><img :src="loginUser.photoURL" alt=""
+        /></a>
       </div>
       <a v-else class="login" @click.prevent="login">ログイン</a>
     </div>
@@ -91,7 +93,6 @@
         </div>
       </div>
     </div>
-    <pre>{{ loginUser }}</pre>
   </div>
 </template>
 
@@ -123,14 +124,15 @@ const regionOptions = [
   },
 ]
 
-function genRandomArray(array, max) {
+function genRandomArray(array, max, withoutNum) {
   while (true) {
     const randomNum = Math.floor(Math.random() * max)
-    if (!array.includes(randomNum)) {
+    if (!array.includes(randomNum) && randomNum !== withoutNum) {
       array.push(randomNum)
       break
     }
   }
+  return array
 }
 
 export default {
@@ -139,6 +141,7 @@ export default {
       quizzes: [],
       endNum: 5,
       status: 0,
+      selectedTypeOfQuiz: null,
       correctAnswers: 0,
       isExamining: false,
     }
@@ -153,17 +156,29 @@ export default {
       else return '次へ'
     },
   },
+  watch: {
+    // クイズが終わったときにログイン済みなら記録をpostする
+    status(newValue) {
+      if (newValue > this.endNum && this.loginUser) {
+        this.addResult({
+          uid: this.loginUser.uid,
+          typeOfQuiz: this.selectedTypeOfQuiz,
+          correctAnswers: this.correctAnswers,
+        })
+      }
+    },
+  },
   created() {
     // 初期表示の設問と選択肢
     this.initQuizzes()
   },
   methods: {
     ...mapActions(['login', 'logout']),
+    ...mapActions('result', ['addResult']),
     // クイズを進行していくためのメソッド
     continueQuiz() {
       // 選択した回答のハイライト用classをはずす
       const all = this.$refs.answers.querySelectorAll('button')
-      console.log(all)
       all.forEach((el) => {
         el.classList.remove('user-answered')
       })
@@ -191,8 +206,13 @@ export default {
           res.data = res.data.filter((el) => {
             return el.translations.ja !== null
           })
-          if (type === 'region') this.makeRegionQuiz(res.data)
-          else if (type === 'flag') this.makeFlagQuiz(res.data)
+          if (type === 'region') {
+            this.makeRegionQuiz(res.data)
+            this.selectedTypeOfQuiz = 'region'
+          } else if (type === 'flag') {
+            this.makeFlagQuiz(res.data)
+            this.selectedTypeOfQuiz = 'flag'
+          }
           this.status = 1
           this.correctAnswers = 0
         })
@@ -203,11 +223,10 @@ export default {
 
     // 6州クイズを生成するメソッド
     makeRegionQuiz(responseData) {
-      const randomNumArray = []
+      let randomNumArray = []
       for (let n = 0; n < 5; n++) {
-        genRandomArray(randomNumArray, DATA_MAX)
+        randomNumArray = genRandomArray(randomNumArray, DATA_MAX)
       }
-      console.log(randomNumArray)
       for (let i = 0; i < this.endNum; i++) {
         const country = responseData[randomNumArray[i]]
         const quiz = {
@@ -220,10 +239,11 @@ export default {
     },
     // 国旗クイズを生成するメソッド
     makeFlagQuiz(responseData) {
-      const randomNumArray = []
+      let randomNumArray = []
       for (let n = 0; n < 5; n++) {
-        genRandomArray(randomNumArray, DATA_MAX)
+        randomNumArray = genRandomArray(randomNumArray, DATA_MAX)
       }
+
       for (let i = 0; i < this.endNum; i++) {
         // 正解を作成
         const country = responseData[randomNumArray[i]]
@@ -236,18 +256,13 @@ export default {
         flagOptions.push(flagOption)
 
         // 不正解問題作成
-        const randomNumArray2 = []
+        let randomNumArray2 = []
         for (let j = 0; j < 4; j++) {
-          while (true) {
-            const randomNum = Math.floor(Math.random() * DATA_MAX)
-            if (
-              !randomNumArray2.includes(randomNum) &&
-              randomNum !== randomNumArray[i] // 正解をかぶってしまうといけないので&&以下の記述が必要
-            ) {
-              randomNumArray2.push(randomNum)
-              break
-            }
-          }
+          randomNumArray2 = genRandomArray(
+            randomNumArray2,
+            DATA_MAX,
+            randomNumArray[i]
+          )
           // 不正解問題をセット
           flagOptions.push({
             name: responseData[randomNumArray2[j]].name,
@@ -320,12 +335,15 @@ export default {
     position: absolute;
     top: 5px;
     right: 10px;
-
     padding: 5px 15px;
     a {
       color: #fff;
       font-size: 1.3rem;
-      border-bottom: 1px solid #fff;
+    }
+    img {
+      width: 65px;
+      border-radius: 50%;
+      border: 1px solid #e0e0e0;
     }
   }
   .index-inner {

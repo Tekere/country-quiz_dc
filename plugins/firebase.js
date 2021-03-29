@@ -3,7 +3,6 @@ import firebase from 'firebase'
 const apiKey = process.env.FIREBASE_API_KEY
 
 // 2重に初期化が行われるのを防ぐ
-console.log(apiKey)
 if (!firebase.apps.length) {
   firebase.initializeApp({
     apiKey,
