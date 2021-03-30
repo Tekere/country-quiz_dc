@@ -9,7 +9,24 @@
             <p>{{ loginUser.displayName }}</p>
           </div>
         </div>
-        <div class="recently-results"></div>
+        <div class="results">
+          <table class="table is-striped is-fullwidth">
+            <thead>
+              <tr>
+                <th>日付</th>
+                <th>挑戦したクイズ</th>
+                <th>結果</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>a</td>
+                <td>b</td>
+                <td>c</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   </div>
@@ -19,9 +36,9 @@ import { mapActions, mapGetters } from 'vuex'
 export default {
   computed: {
     ...mapGetters(['loginUser']),
-    // ...mapGetters('result', ['results']),
+    ...mapGetters('result', ['results']),
   },
-  mounted() {
+  created() {
     this.fetchResult(this.loginUser.uid)
   },
   methods: {
@@ -77,8 +94,18 @@ export default {
       font-size: 1.5rem;
     }
   }
-  .recently-results {
+  .results {
+    width: 100%;
     overflow-y: auto;
+
+    table {
+      width: 100%;
+      th,
+      td {
+        padding-left: 0.5rem;
+        font-weight: normal;
+      }
+    }
   }
 }
 </style>
