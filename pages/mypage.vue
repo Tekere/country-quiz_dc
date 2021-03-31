@@ -1,5 +1,6 @@
 <template>
   <div id="mypage">
+    <a class="logout" @click.prevent="logout">ログアウト</a>
     <div class="mypage-inner">
       <h1 class="title is-1">COUNTRY QUIZ</h1>
       <div class="mypage-box">
@@ -19,10 +20,10 @@
               </tr>
             </thead>
             <tbody>
-              <tr>
-                <td>a</td>
-                <td>b</td>
-                <td>c</td>
+              <tr v-for="result in results" :key="result.nanoseconds">
+                <td>{{ result.createdAt.seconds | convertCreatedAt }}</td>
+                <td>{{ result.typeOfQuiz | convertTypeOfQuiz }}</td>
+                <td>{{ result.correctAnswerCount }}</td>
               </tr>
             </tbody>
           </table>
@@ -33,16 +34,34 @@
 </template>
 <script>
 import { mapActions, mapGetters } from 'vuex'
+import moment from 'moment'
 export default {
   computed: {
     ...mapGetters(['loginUser']),
     ...mapGetters('result', ['results']),
   },
   created() {
-    this.fetchResult(this.loginUser.uid)
+    if (this.loginUser) {
+      this.fetchResult(this.loginUser.uid)
+    } else {
+      this.$router.push('/')
+    }
   },
   methods: {
+    ...mapActions(['logout']),
     ...mapActions('result', ['fetchResult', 'addResult']),
+  },
+  filters: {
+    convertCreatedAt(val) {
+      let dateTime = new Date(val * 1000)
+      dateTime = moment(dateTime).format('YYYY-MM-DD')
+      return dateTime
+    },
+    convertTypeOfQuiz(val) {
+      if (val === 'region') return '地域区分クイズ'
+      else if (val === 'flag') return '国旗クイズ'
+      else return 'error'
+    },
   },
 }
 </script>
@@ -54,6 +73,13 @@ export default {
   justify-content: center;
   align-items: center;
   position: relative;
+  .logout {
+    color: #fff;
+    font-size: 1.3rem;
+    position: absolute;
+    top: 5px;
+    right: 10px;
+  }
   .mypage-inner {
     position: relative;
     display: flex;

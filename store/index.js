@@ -35,6 +35,7 @@ export const actions = {
       .signOut()
       .then(() => {
         commit('deleteLoginUser')
+        this.$router.push('/')
       })
   },
 }
