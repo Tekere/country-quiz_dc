@@ -23,10 +23,16 @@
               <tr v-for="result in results" :key="result.nanoseconds">
                 <td>{{ result.createdAt.seconds | convertCreatedAt }}</td>
                 <td>{{ result.typeOfQuiz | convertTypeOfQuiz }}</td>
-                <td>{{ result.correctAnswerCount }}</td>
+                <td>{{ result.correctAnswerCount }}/5</td>
               </tr>
             </tbody>
           </table>
+        </div>
+        <div class="graf-box">
+          <div class="pie">
+            <pie-chart :results="results"></pie-chart>
+          </div>
+          <div class="average">3.14</div>
         </div>
       </div>
     </div>
@@ -35,7 +41,11 @@
 <script>
 import { mapActions, mapGetters } from 'vuex'
 import moment from 'moment'
+import PieChart from '@/components/PieChart'
 export default {
+  components: {
+    PieChart,
+  },
   computed: {
     ...mapGetters(['loginUser']),
     ...mapGetters('result', ['results']),
@@ -53,8 +63,7 @@ export default {
   },
   filters: {
     convertCreatedAt(val) {
-      let dateTime = new Date(val * 1000)
-      dateTime = moment(dateTime).format('YYYY-MM-DD')
+      const dateTime = moment.unix(val).format('YYYY/M/D')
       return dateTime
     },
     convertTypeOfQuiz(val) {
@@ -123,6 +132,7 @@ export default {
   .results {
     width: 100%;
     overflow-y: auto;
+    height: 30vh;
 
     table {
       width: 100%;
@@ -131,6 +141,18 @@ export default {
         padding-left: 0.5rem;
         font-weight: normal;
       }
+    }
+  }
+  .graf-box {
+    display: flex;
+    width: 100%;
+    & > div {
+      width: 50%;
+    }
+    .average {
+      display: flex;
+      justify-content: center;
+      align-items: center;
     }
   }
 }
