@@ -21,6 +21,10 @@ export default {
       },
     }
   },
+  mounted() {
+    this.countTypeOfQuiz()
+    this.renderChart(this.chartdata, this.options)
+  },
   methods: {
     countTypeOfQuiz() {
       console.log(this.results)
@@ -33,14 +37,10 @@ export default {
         },
         { regionCount: 0, flagCount: 0 }
       )
-      // this.chartdata.datasets.data[0] = res.regionCount
-      // this.chartdata.datasets.data[0] = res.flagCount
+      this.chartdata.datasets.data[0] = res.regionCount
+      this.chartdata.datasets.data[0] = res.flagCount
       console.log(res)
     },
-  },
-  mounted() {
-    this.countTypeOfQuiz()
-    this.renderChart(this.chartdata, this.options)
   },
 }
 </script>
