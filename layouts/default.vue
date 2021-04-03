@@ -1,12 +1,20 @@
 <template>
   <div id="container">
-    <Nuxt />
+    <Nuxt v-if="isLoading" />
+    <loading v-else>loading</loading>
   </div>
 </template>
 <script>
 import firebase from 'firebase'
-import { mapActions } from 'vuex'
+import { mapGetters, mapActions } from 'vuex'
+import Loading from '@/components/Loading'
 export default {
+  components: {
+    Loading,
+  },
+  computed: {
+    ...mapGetters(['isLoading']),
+  },
   created() {
     firebase.auth().onAuthStateChanged((user) => {
       if (user) {

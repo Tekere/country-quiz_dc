@@ -2,10 +2,12 @@ import firebase from '~/plugins/firebase'
 
 export const state = () => ({
   loginUser: null,
+  isLoading: false,
 })
 
 export const getters = {
   loginUser: (state) => state.loginUser,
+  isLoading: (state) => state.isLoading,
 }
 
 export const mutations = {
@@ -16,14 +18,19 @@ export const mutations = {
   deleteLoginUser(state) {
     state.loginUser = null
   },
+  stopLoading(state) {
+    state.isLoading = true
+  },
 }
 
 export const actions = {
   setLoginUser({ commit }, user) {
     commit('setLoginUser', user)
+    commit('stopLoading')
   },
   deleteLoginUser({ commit }) {
     commit('deleteLoginUser')
+    commit('stopLoading')
   },
   login() {
     const googleAuthProvider = new firebase.auth.GoogleAuthProvider()
