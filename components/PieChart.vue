@@ -27,7 +27,7 @@ export default {
   },
   methods: {
     countTypeOfQuiz() {
-      console.log(this.results)
+      // console.log(this.results)
       const res = this.results.reduce(
         (acc, el) => {
           console.log('hesalwsasalo')
@@ -37,8 +37,8 @@ export default {
         },
         { regionCount: 0, flagCount: 0 }
       )
-      this.chartdata.datasets.data[0] = res.regionCount
-      this.chartdata.datasets.data[0] = res.flagCount
+      this.chartdata.datasets[0].data[0] = res.regionCount
+      this.chartdata.datasets[0].data[1] = res.flagCount
       console.log(res)
     },
   },
