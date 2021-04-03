@@ -1,6 +1,9 @@
 <template>
   <div id="mypage">
-    <a class="logout" @click.prevent="logout">ログアウト</a>
+    <div class="nav">
+      <router-link to="/">クイズへ</router-link>
+      <a class="logout" @click.prevent="logout">ログアウト</a>
+    </div>
     <div class="mypage-inner">
       <h1 class="title is-1">COUNTRY QUIZ</h1>
       <div class="mypage-box">
@@ -82,13 +85,19 @@ export default {
   justify-content: center;
   align-items: center;
   position: relative;
-  .logout {
+  .nav {
     color: #fff;
     font-size: 1.3rem;
+    display: flex;
     position: absolute;
     top: 5px;
     right: 10px;
+    a {
+      color: #fff;
+      margin-right: 20px;
+    }
   }
+
   .mypage-inner {
     position: relative;
     display: flex;
