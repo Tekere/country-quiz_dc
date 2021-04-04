@@ -2,7 +2,12 @@
 import { Pie } from 'vue-chartjs'
 export default {
   extends: Pie,
-  props: ['countTypeOfQuiz'],
+  props: {
+    countTypeOfQuiz: {
+      type: Object,
+      default: () => ({ regionCount: 0, flagCount: 0 }),
+    },
+  },
   data() {
     return {
       chartdata: {
