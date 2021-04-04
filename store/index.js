@@ -26,11 +26,9 @@ export const mutations = {
 export const actions = {
   setLoginUser({ commit }, user) {
     commit('setLoginUser', user)
-    commit('stopLoading')
   },
   deleteLoginUser({ commit }) {
     commit('deleteLoginUser')
-    commit('stopLoading')
   },
   login() {
     const googleAuthProvider = new firebase.auth.GoogleAuthProvider()
@@ -44,5 +42,8 @@ export const actions = {
         commit('deleteLoginUser')
         this.$router.push('/')
       })
+  },
+  stopLoading({ commit }) {
+    commit('stopLoading')
   },
 }

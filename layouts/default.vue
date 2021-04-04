@@ -13,19 +13,41 @@ export default {
     Loading,
   },
   computed: {
+    ...mapGetters(['loginUser']),
     ...mapGetters(['isLoading']),
   },
   created() {
     firebase.auth().onAuthStateChanged((user) => {
       if (user) {
-        this.setLoginUser(user)
+        const that = this
+
+        new Promise(function (resolve, reject) {
+          that.setLoginUser(user)
+          resolve()
+        })
+          .then(function () {
+            return new Promise(function (resolve, reject) {
+              that.fetchResult(that.loginUser.uid)
+              console.log('then1')
+              resolve()
+            })
+          })
+          .then(function () {
+            return new Promise(function (resolve, reject) {
+              setTimeout(() => {
+                that.stopLoading()
+                console.log('then2')
+              }, 1000)
+            })
+          })
       } else {
         this.deleteLoginUser()
       }
     })
   },
   methods: {
-    ...mapActions(['setLoginUser', 'deleteLoginUser']),
+    ...mapActions(['setLoginUser', 'deleteLoginUser', 'stopLoading']),
+    ...mapActions('result', ['fetchResult']),
   },
 }
 </script>

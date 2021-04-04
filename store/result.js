@@ -6,6 +6,26 @@ export const state = () => ({
 
 export const getters = {
   results: (state) => state.results,
+  countTypeOfQuiz: (state) => {
+    console.log(state.results)
+    const res = state.results.reduce(
+      (acc, el) => {
+        if (el.typeOfQuiz === 'flag') acc.flagCount++
+        if (el.typeOfQuiz === 'region') acc.regionCount++
+        return acc
+      },
+      { regionCount: 0, flagCount: 0 }
+    )
+    console.log(res)
+    return res
+  },
+  averageOfCorrectAnswers: (state) => {
+    const res = state.results.reduce((acc, el) => {
+      acc += el.correctAnswerCount
+      return acc
+    }, 0)
+    return res / state.results.length
+  },
 }
 
 export const mutations = {
