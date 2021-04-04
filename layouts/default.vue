@@ -1,23 +1,53 @@
 <template>
   <div id="container">
-    <Nuxt />
+    <Nuxt v-if="isLoading" />
+    <loading v-else>loading</loading>
   </div>
 </template>
 <script>
 import firebase from 'firebase'
-import { mapActions } from 'vuex'
+import { mapGetters, mapActions } from 'vuex'
+import Loading from '@/components/Loading'
 export default {
+  components: {
+    Loading,
+  },
+  computed: {
+    ...mapGetters(['loginUser']),
+    ...mapGetters(['isLoading']),
+  },
   created() {
     firebase.auth().onAuthStateChanged((user) => {
       if (user) {
-        this.setLoginUser(user)
+        const that = this
+
+        new Promise(function (resolve, reject) {
+          that.setLoginUser(user)
+          resolve()
+        })
+          .then(function () {
+            return new Promise(function (resolve, reject) {
+              that.fetchResult(that.loginUser.uid)
+              console.log('then1')
+              resolve()
+            })
+          })
+          .then(function () {
+            return new Promise(function (resolve, reject) {
+              setTimeout(() => {
+                that.stopLoading()
+                console.log('then2')
+              }, 1000)
+            })
+          })
       } else {
         this.deleteLoginUser()
       }
     })
   },
   methods: {
-    ...mapActions(['setLoginUser', 'deleteLoginUser']),
+    ...mapActions(['setLoginUser', 'deleteLoginUser', 'stopLoading']),
+    ...mapActions('result', ['fetchResult']),
   },
 }
 </script>

@@ -2,10 +2,12 @@ import firebase from '~/plugins/firebase'
 
 export const state = () => ({
   loginUser: null,
+  isLoading: false,
 })
 
 export const getters = {
   loginUser: (state) => state.loginUser,
+  isLoading: (state) => state.isLoading,
 }
 
 export const mutations = {
@@ -15,6 +17,9 @@ export const mutations = {
   },
   deleteLoginUser(state) {
     state.loginUser = null
+  },
+  stopLoading(state) {
+    state.isLoading = true
   },
 }
 
@@ -37,5 +42,8 @@ export const actions = {
         commit('deleteLoginUser')
         this.$router.push('/')
       })
+  },
+  stopLoading({ commit }) {
+    commit('stopLoading')
   },
 }

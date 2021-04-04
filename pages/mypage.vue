@@ -1,6 +1,9 @@
 <template>
   <div id="mypage">
-    <a class="logout" @click.prevent="logout">ログアウト</a>
+    <div class="nav">
+      <router-link to="/">TOP</router-link>
+      <a class="logout" @click.prevent="logout">ログアウト</a>
+    </div>
     <div class="mypage-inner">
       <h1 class="title is-1">COUNTRY QUIZ</h1>
       <div class="mypage-box">
@@ -30,9 +33,12 @@
         </div>
         <div class="graf-box">
           <div class="pie">
-            <pie-chart :results="results"></pie-chart>
+            <pie-chart :count-type-of-quiz="countTypeOfQuiz"></pie-chart>
           </div>
-          <div class="average">3.14</div>
+          <div class="average">
+            <h4>平均</h4>
+            <p>{{ averageOfCorrectAnswers }}</p>
+          </div>
         </div>
       </div>
     </div>
@@ -46,14 +52,21 @@ export default {
   components: {
     PieChart,
   },
+  data() {
+    return {
+      typeOfQuizObj: null,
+    }
+  },
   computed: {
     ...mapGetters(['loginUser']),
-    ...mapGetters('result', ['results']),
+    ...mapGetters('result', [
+      'results',
+      'countTypeOfQuiz',
+      'averageOfCorrectAnswers',
+    ]),
   },
   created() {
-    if (this.loginUser) {
-      this.fetchResult(this.loginUser.uid)
-    } else {
+    if (!this.loginUser) {
       this.$router.push('/')
     }
   },
@@ -82,13 +95,19 @@ export default {
   justify-content: center;
   align-items: center;
   position: relative;
-  .logout {
+  .nav {
     color: #fff;
     font-size: 1.3rem;
+    display: flex;
     position: absolute;
     top: 5px;
     right: 10px;
+    a {
+      color: #fff;
+      margin-right: 20px;
+    }
   }
+
   .mypage-inner {
     position: relative;
     display: flex;
@@ -151,8 +170,20 @@ export default {
     }
     .average {
       display: flex;
+      flex-direction: column;
       justify-content: center;
       align-items: center;
+      position: relative;
+      h4 {
+        position: absolute;
+        top: 20%;
+        font-size: 1.5rem;
+      }
+      p {
+        color: #6fcf97;
+        font-weight: 700;
+        font-size: 2.5rem;
+      }
     }
   }
 }
