@@ -20,25 +20,19 @@ export default {
     firebase.auth().onAuthStateChanged((user) => {
       if (user) {
         const that = this
-
-        new Promise(function (resolve, reject) {
+        new Promise(function (resolve) {
           that.setLoginUser(user)
           resolve()
         })
           .then(function () {
-            return new Promise(function (resolve, reject) {
-              that.fetchResult(that.loginUser.uid)
-              console.log('then1')
-              resolve()
+            return new Promise(function (resolve) {
+              that.fetchResult(that.loginUser.uid).then(() => {
+                resolve()
+              })
             })
           })
           .then(function () {
-            return new Promise(function (resolve, reject) {
-              setTimeout(() => {
-                that.stopLoading()
-                console.log('then2')
-              }, 1000)
-            })
+            that.stopLoading()
           })
       } else {
         this.deleteLoginUser()

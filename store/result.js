@@ -7,7 +7,6 @@ export const state = () => ({
 export const getters = {
   results: (state) => state.results,
   countTypeOfQuiz: (state) => {
-    console.log(state.results)
     const res = state.results.reduce(
       (acc, el) => {
         if (el.typeOfQuiz === 'flag') acc.flagCount++
@@ -16,7 +15,6 @@ export const getters = {
       },
       { regionCount: 0, flagCount: 0 }
     )
-    console.log(res)
     return res
   },
   averageOfCorrectAnswers: (state) => {
@@ -36,15 +34,20 @@ export const mutations = {
 
 export const actions = {
   fetchResult({ commit }, uid) {
-    firebase
-      .firestore()
-      .collection(`users/${uid}/results`)
-      .get()
-      .then((snapshot) => {
-        snapshot.forEach((doc) => {
-          commit('addResult', doc.data())
+    return new Promise(function (resolve) {
+      firebase
+        .firestore()
+        .collection(`users/${uid}/results`)
+        .get()
+        .then((snapshot) => {
+          snapshot.forEach((doc) => {
+            commit('addResult', doc.data())
+          })
         })
-      })
+        .then(() => {
+          resolve()
+        })
+    })
   },
 
   addResult({ commit }, { uid, typeOfQuiz, correctAnswers }) {
