@@ -22,7 +22,8 @@ export const getters = {
       acc += el.correctAnswerCount
       return acc
     }, 0)
-    return (res / state.results.length).toFixed(2)
+    if (res) return (res / state.results.length).toFixed(2)
+    else return 0
   },
 }
 
