@@ -36,6 +36,7 @@ export default {
           })
       } else {
         this.deleteLoginUser()
+        this.stopLoading()
       }
     })
   },
