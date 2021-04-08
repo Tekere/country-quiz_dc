@@ -22,13 +22,14 @@ export const getters = {
       acc += el.correctAnswerCount
       return acc
     }, 0)
-    return res / state.results.length
+    if (res) return (res / state.results.length).toFixed(2)
+    else return 0
   },
 }
 
 export const mutations = {
-  addResult(state, resultObj) {
-    state.results.push(resultObj)
+  addResult(state, result) {
+    state.results.push(result)
   },
 }
 
@@ -40,8 +41,17 @@ export const actions = {
         .collection(`users/${uid}/results`)
         .get()
         .then((snapshot) => {
+          const result = []
           snapshot.forEach((doc) => {
-            commit('addResult', doc.data())
+            result.push(doc.data())
+          })
+          result.sort((a, b) => {
+            if (a.createdAt.seconds > b.createdAt.seconds) return -1
+            if (a.createdAt.seconds < b.createdAt.seconds) return 1
+            return 0
+          })
+          result.forEach((el) => {
+            commit('addResult', el)
           })
         })
         .then(() => {
@@ -52,22 +62,23 @@ export const actions = {
 
   addResult({ commit }, { uid, typeOfQuiz, correctAnswers }) {
     if (uid) {
+      const targetDate = new Date()
       const resultObj = {
         typeOfQuiz,
         correctAnswerCount: correctAnswers,
-        createdAt: new Date(),
+        // createdAt: targetDate,
+        createdAt: {
+          seconds: targetDate.getTime() / 1000,
+        },
       }
-      firebase.firestore().collection(`users/${uid}/results`).add(
-        // 記録時間をサーバー側に任せるパターン
-        // {
-        //   typeOfQuiz,
-        //   correctAnswerCount: correctAnswers,
-        //   createdAt: firebase.firestore.FieldValue.serverTimestamp(),
-        // }
-        resultObj
-      )
-      // fetchResultsのときにも同じmutationが呼ばれるため配列にして渡す
-      commit('addResult', resultObj)
+      firebase.firestore().collection(`users/${uid}/results`).add(resultObj)
+      commit('addResult', {
+        typeOfQuiz,
+        correctAnswerCount: correctAnswers,
+        createdAt: {
+          seconds: targetDate.getTime() / 1000,
+        },
+      })
     }
   },
 }
