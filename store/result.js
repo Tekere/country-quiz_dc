@@ -29,7 +29,8 @@ export const getters = {
 
 export const mutations = {
   addResult(state, result) {
-    state.results.push(result)
+    // ascで古い順にcommitされていく & 一時的にstateに入れるものは最新なのでunshiftを使う
+    state.results.unshift(result)
   },
 }
 
@@ -39,19 +40,11 @@ export const actions = {
       firebase
         .firestore()
         .collection(`users/${uid}/results`)
+        .orderBy('createdAt', 'asc')
         .get()
         .then((snapshot) => {
-          const result = []
           snapshot.forEach((doc) => {
-            result.push(doc.data())
-          })
-          result.sort((a, b) => {
-            if (a.createdAt.seconds > b.createdAt.seconds) return -1
-            if (a.createdAt.seconds < b.createdAt.seconds) return 1
-            return 0
-          })
-          result.forEach((el) => {
-            commit('addResult', el)
+            commit('addResult', doc.data())
           })
         })
         .then(() => {
@@ -66,10 +59,7 @@ export const actions = {
       const resultObj = {
         typeOfQuiz,
         correctAnswerCount: correctAnswers,
-        // createdAt: targetDate,
-        createdAt: {
-          seconds: targetDate.getTime() / 1000,
-        },
+        createdAt: targetDate,
       }
       firebase.firestore().collection(`users/${uid}/results`).add(resultObj)
       commit('addResult', {
