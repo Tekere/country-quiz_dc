@@ -102,6 +102,10 @@ export default {
     position: absolute;
     top: 5px;
     right: 10px;
+    @media (max-width: 630px) {
+      font-size: 12px;
+      right: 0px;
+    }
     a {
       color: #fff;
       margin-right: 20px;
@@ -123,6 +127,9 @@ export default {
     margin-bottom: 1em;
     font-size: 2.4rem;
     font-family: 'Poppins';
+    @media (max-width: 630px) {
+      font-size: 24px;
+    }
   }
   .mypage-box {
     background-color: #fff;
@@ -133,6 +140,9 @@ export default {
     display: flex;
     flex-direction: column;
     align-items: center;
+    @media (max-width: 630px) {
+      padding: 2rem 2rem 0;
+    }
   }
   .user-info {
     height: 145px;
@@ -142,6 +152,9 @@ export default {
       width: 90px;
       border-radius: 50%;
       border: 1px solid #e0e0e0;
+      @media (max-width: 630px) {
+        width: 70px;
+      }
     }
     p {
       padding-top: 0.5rem;
@@ -155,6 +168,9 @@ export default {
 
     table {
       width: 100%;
+      @media (max-width: 630px) {
+        font-size: 13px;
+      }
       th,
       td {
         padding-left: 0.5rem;
@@ -165,6 +181,9 @@ export default {
   .graf-box {
     display: flex;
     width: 100%;
+    @media (max-width: 630px) {
+      height: 250px;
+    }
     & > div {
       width: 50%;
     }
@@ -184,6 +203,12 @@ export default {
         font-weight: 700;
         font-size: 2.5rem;
       }
+    }
+  }
+  #pie-chart {
+    @media (max-width: 630px) {
+      height: 290px !important;
+      width: auto !important;
     }
   }
 }

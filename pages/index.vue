@@ -336,14 +336,24 @@ export default {
     top: 5px;
     right: 10px;
     padding: 5px 15px;
+    @media (max-width: 630px) {
+      top: 10px;
+      z-index: 10;
+    }
     a {
+      display: block;
       color: #fff;
       font-size: 1.3rem;
+      z-index: 10;
     }
     img {
+      display: block;
       width: 65px;
       border-radius: 50%;
       border: 1px solid #e0e0e0;
+      @media (max-width: 630px) {
+        width: 50px;
+      }
     }
   }
   .index-inner {
@@ -363,6 +373,9 @@ export default {
   margin-bottom: 1em;
   font-size: 2.4rem;
   font-family: 'Poppins';
+  @media (max-width: 630px) {
+    font-size: 24px;
+  }
 }
 .quiz-box {
   background-color: #fff;
@@ -373,6 +386,9 @@ export default {
   display: flex;
   flex-direction: column;
   align-items: center;
+  @media (max-width: 630px) {
+    padding: 2rem 2rem 0;
+  }
 }
 .v-enter-active,
 .v-leave-active {
@@ -386,12 +402,18 @@ img.decoration {
   position: absolute;
   top: 0;
   right: 0;
+  @media (max-width: 630px) {
+    display: none;
+  }
 }
 img.flag-img {
   height: 120px;
   display: block;
   margin: 0 auto;
   border: 5px solid lightgray;
+  @media (max-width: 630px) {
+    height: 80px;
+  }
 }
 .question {
   display: block;
@@ -401,6 +423,10 @@ img.flag-img {
   margin-bottom: 2.5rem;
   color: #2f527b;
   text-align: center;
+  @media (max-width: 630px) {
+    font-size: 18px;
+    margin-bottom: 1.5rem;
+  }
 }
 
 .answers {
@@ -448,7 +474,8 @@ img.flag-img {
   }
 }
 .button {
-  max-width: 450px;
+  width: 450px;
+  max-width: 80vw;
   font-family: 'Noto Sans JP';
   border-color: #6066d070;
   color: #6066d0;
@@ -459,6 +486,10 @@ img.flag-img {
   transition: all 0.3s;
   margin: 0 auto;
   margin-bottom: 1.5rem;
+  @media (max-width: 630px) {
+    font-size: 14px;
+    margin-bottom: 1.2rem;
+  }
 
   &:hover {
     color: #fff;
