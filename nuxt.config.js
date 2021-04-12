@@ -56,4 +56,7 @@ export default {
   moments: {
     locales: ['ja'],
   },
+  env: {
+    FIREBASE_API_KEY:process.env.FIREBASE_API_KEY
+  }
 }
