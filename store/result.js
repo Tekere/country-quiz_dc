@@ -62,13 +62,7 @@ export const actions = {
         createdAt: targetDate,
       }
       firebase.firestore().collection(`users/${uid}/results`).add(resultObj)
-      commit('addResult', {
-        typeOfQuiz,
-        correctAnswerCount: correctAnswers,
-        createdAt: {
-          seconds: targetDate.getTime() / 1000,
-        },
-      })
+      commit('addResult', resultObj)
     }
   },
 }

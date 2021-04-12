@@ -24,7 +24,7 @@
             </thead>
             <tbody>
               <tr v-for="result in results" :key="result.nanoseconds">
-                <td>{{ result.createdAt.seconds | convertCreatedAt }}</td>
+                <td>{{ result.createdAt | convertCreatedAt }}</td>
                 <td>{{ result.typeOfQuiz | convertTypeOfQuiz }}</td>
                 <td>{{ result.correctAnswerCount }}/5</td>
               </tr>
@@ -76,8 +76,13 @@ export default {
   },
   filters: {
     convertCreatedAt(val) {
-      const dateTime = moment.unix(val).format('YYYY/M/D')
-      return dateTime
+      if (val.seconds) {
+        const dateTime = moment.unix(val.seconds).format('YYYY/M/D')
+        return dateTime
+      } else {
+        const dateTime = moment(val.seconds).format('YYYY/M/D')
+        return dateTime
+      }
     },
     convertTypeOfQuiz(val) {
       if (val === 'region') return '地域区分クイズ'
@@ -91,6 +96,8 @@ export default {
 #mypage {
   display: flex;
   height: 100%;
+  max-height: 100vh;
+  overflow-y: hidden;
   flex-direction: column;
   justify-content: center;
   align-items: center;
