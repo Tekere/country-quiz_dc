@@ -1,5 +1,13 @@
 <template>
   <div id="index">
+    <div v-cloak class="auth-box">
+      <div v-if="loginUser">
+        <a href="" @click.prevent="$router.push({ name: 'mypage' })"
+          ><img :src="loginUser.photoURL" alt=""
+        /></a>
+      </div>
+      <a v-else class="login" @click.prevent="login">ログイン</a>
+    </div>
     <div class="index-inner">
       <h1 class="title is-1">COUNTRY QUIZ</h1>
       <img
@@ -90,6 +98,7 @@
 
 <script>
 import axios from 'axios'
+import { mapGetters, mapActions } from 'vuex'
 
 const DATA_MAX = 200 // APIのデータ上限
 const regionOptions = [
@@ -115,14 +124,15 @@ const regionOptions = [
   },
 ]
 
-function genRandomArray(array, max) {
+function genRandomArray(array, max, withoutNum) {
   while (true) {
     const randomNum = Math.floor(Math.random() * max)
-    if (!array.includes(randomNum)) {
+    if (!array.includes(randomNum) && randomNum !== withoutNum) {
       array.push(randomNum)
       break
     }
   }
+  return array
 }
 
 export default {
@@ -131,11 +141,13 @@ export default {
       quizzes: [],
       endNum: 5,
       status: 0,
+      selectedTypeOfQuiz: null,
       correctAnswers: 0,
       isExamining: false,
     }
   },
   computed: {
+    ...mapGetters(['loginUser']),
     displayQuiz() {
       return this.quizzes[this.status]
     },
@@ -144,16 +156,29 @@ export default {
       else return '次へ'
     },
   },
+  watch: {
+    // クイズが終わったときにログイン済みなら記録をpostする
+    status(newValue) {
+      if (newValue > this.endNum && this.loginUser) {
+        this.addResult({
+          uid: this.loginUser.uid,
+          typeOfQuiz: this.selectedTypeOfQuiz,
+          correctAnswers: this.correctAnswers,
+        })
+      }
+    },
+  },
   created() {
     // 初期表示の設問と選択肢
     this.initQuizzes()
   },
   methods: {
+    ...mapActions(['login', 'logout']),
+    ...mapActions('result', ['addResult']),
     // クイズを進行していくためのメソッド
     continueQuiz() {
       // 選択した回答のハイライト用classをはずす
       const all = this.$refs.answers.querySelectorAll('button')
-      console.log(all)
       all.forEach((el) => {
         el.classList.remove('user-answered')
       })
@@ -181,8 +206,13 @@ export default {
           res.data = res.data.filter((el) => {
             return el.translations.ja !== null
           })
-          if (type === 'region') this.makeRegionQuiz(res.data)
-          else if (type === 'flag') this.makeFlagQuiz(res.data)
+          if (type === 'region') {
+            this.makeRegionQuiz(res.data)
+            this.selectedTypeOfQuiz = 'region'
+          } else if (type === 'flag') {
+            this.makeFlagQuiz(res.data)
+            this.selectedTypeOfQuiz = 'flag'
+          }
           this.status = 1
           this.correctAnswers = 0
         })
@@ -193,9 +223,11 @@ export default {
 
     // 6州クイズを生成するメソッド
     makeRegionQuiz(responseData) {
-      const randomNumArray = []
+      let randomNumArray = []
+      for (let n = 0; n < 5; n++) {
+        randomNumArray = genRandomArray(randomNumArray, DATA_MAX)
+      }
       for (let i = 0; i < this.endNum; i++) {
-        genRandomArray(randomNumArray, DATA_MAX)
         const country = responseData[randomNumArray[i]]
         const quiz = {
           question: `${country.translations.ja}が属する州はどこですか？`,
@@ -207,31 +239,37 @@ export default {
     },
     // 国旗クイズを生成するメソッド
     makeFlagQuiz(responseData) {
-      const randomNumArray = []
+      let randomNumArray = []
+      for (let n = 0; n < 5; n++) {
+        randomNumArray = genRandomArray(randomNumArray, DATA_MAX)
+      }
+
       for (let i = 0; i < this.endNum; i++) {
-        genRandomArray(randomNumArray, DATA_MAX)
+        // 正解を作成
         const country = responseData[randomNumArray[i]]
         const flagOptions = []
         const flagOption = {
           name: country.name,
           jaName: country.translations.ja,
         }
-        const randomNumArray2 = []
+        // 正解セット
+        flagOptions.push(flagOption)
+
+        // 不正解問題作成
+        let randomNumArray2 = []
         for (let j = 0; j < 4; j++) {
-          while (true) {
-            const randomNum = Math.floor(Math.random() * DATA_MAX)
-            if (!randomNumArray2.includes(randomNum) && randomNum !== i) {
-              randomNumArray2.push(randomNum)
-              break
-            }
-          }
+          randomNumArray2 = genRandomArray(
+            randomNumArray2,
+            DATA_MAX,
+            randomNumArray[i]
+          )
+          // 不正解問題をセット
           flagOptions.push({
             name: responseData[randomNumArray2[j]].name,
             jaName: responseData[randomNumArray2[j]].translations.ja,
           })
         }
-        flagOptions.push(flagOption)
-        // answer sort
+        // 正解が先頭でセットされてしまっているのでsortをかけて分からなくする
         flagOptions.sort((a, b) => {
           if (a.name > b.name) return -1
           else if (a.name < b.name) return 1
@@ -291,7 +329,33 @@ export default {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-
+  position: relative;
+  .auth-box {
+    display: block;
+    position: absolute;
+    top: 5px;
+    right: 10px;
+    padding: 5px 15px;
+    @media (max-width: 630px) {
+      top: 10px;
+      z-index: 10;
+    }
+    a {
+      display: block;
+      color: #fff;
+      font-size: 1.3rem;
+      z-index: 10;
+    }
+    img {
+      display: block;
+      width: 65px;
+      border-radius: 50%;
+      border: 1px solid #e0e0e0;
+      @media (max-width: 630px) {
+        width: 50px;
+      }
+    }
+  }
   .index-inner {
     position: relative;
     display: flex;
@@ -309,6 +373,9 @@ export default {
   margin-bottom: 1em;
   font-size: 2.4rem;
   font-family: 'Poppins';
+  @media (max-width: 630px) {
+    font-size: 24px;
+  }
 }
 .quiz-box {
   background-color: #fff;
@@ -319,6 +386,9 @@ export default {
   display: flex;
   flex-direction: column;
   align-items: center;
+  @media (max-width: 630px) {
+    padding: 2rem 2rem 0;
+  }
 }
 .v-enter-active,
 .v-leave-active {
@@ -332,12 +402,18 @@ img.decoration {
   position: absolute;
   top: 0;
   right: 0;
+  @media (max-width: 630px) {
+    display: none;
+  }
 }
 img.flag-img {
   height: 120px;
   display: block;
   margin: 0 auto;
   border: 5px solid lightgray;
+  @media (max-width: 630px) {
+    height: 80px;
+  }
 }
 .question {
   display: block;
@@ -347,6 +423,10 @@ img.flag-img {
   margin-bottom: 2.5rem;
   color: #2f527b;
   text-align: center;
+  @media (max-width: 630px) {
+    font-size: 18px;
+    margin-bottom: 1.5rem;
+  }
 }
 
 .answers {
@@ -394,7 +474,8 @@ img.flag-img {
   }
 }
 .button {
-  max-width: 450px;
+  width: 450px;
+  max-width: 80vw;
   font-family: 'Noto Sans JP';
   border-color: #6066d070;
   color: #6066d0;
@@ -405,6 +486,10 @@ img.flag-img {
   transition: all 0.3s;
   margin: 0 auto;
   margin-bottom: 1.5rem;
+  @media (max-width: 630px) {
+    font-size: 14px;
+    margin-bottom: 1.2rem;
+  }
 
   &:hover {
     color: #fff;

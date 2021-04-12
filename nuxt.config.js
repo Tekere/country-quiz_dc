@@ -37,6 +37,7 @@ export default {
     '@nuxtjs/axios',
     '@nuxtjs/dotenv',
     'nuxt-webfontloader',
+    '@nuxtjs/moment',
   ],
   // webfont-loader
   webfontloader: {
@@ -50,4 +51,9 @@ export default {
 
   // Build Configuration: https://go.nuxtjs.dev/config-build
   build: {},
+
+  // moments
+  moments: {
+    locales: ['ja'],
+  },
 }
